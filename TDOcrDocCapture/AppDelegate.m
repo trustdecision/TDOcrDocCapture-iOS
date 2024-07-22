@@ -6,7 +6,7 @@
 //
 
 #import "AppDelegate.h"
-
+#import "TDOcrDocCaptureViewController.h"
 @interface AppDelegate ()
 
 @end
@@ -15,7 +15,10 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    TDOcrDocCaptureViewController * captureVC = [[TDOcrDocCaptureViewController alloc]init];
+    self.window.rootViewController = captureVC;
+    [self.window makeKeyAndVisible];
     return YES;
 }
 
