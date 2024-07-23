@@ -24,6 +24,8 @@
 
 @property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;
 
+@property (nonatomic, strong) UIImageView* idMaskImageView;
+
 @end
 
 @implementation TDOcrDocCaptureViewController
@@ -116,6 +118,7 @@
     
     
     UIImageView* idMaskImageView = [[UIImageView alloc]init];
+    self.idMaskImageView = idMaskImageView;
     [maskView addSubview:idMaskImageView];
     idMaskImageView.translatesAutoresizingMaskIntoConstraints = NO;
     
@@ -567,6 +570,35 @@
 }
 
 
+// 从PNG图片中裁剪指定矩形框区域像素并生成PNG
+- (void)cropImageAndSaveToPhotosAlbum:(UIImage*)originalImage {
+    
+    // 要裁剪的矩形框区域（示例为裁剪左上角100x100的区域）
+    CGRect cropRect = [self.idMaskImageView convertRect:self.idMaskImageView.frame toView:self.view];
+    
+    CGRect cropRect2 = CGRectMake(cropRect.origin.x * 2, cropRect.origin.y * 2, cropRect.size.width * 2, cropRect.size.height * 2);
+    // 根据裁剪区域创建CGImageRef
+    CGImageRef imageRef = CGImageCreateWithImageInRect(originalImage.CGImage, cropRect2);
+    
+    // 创建UIImage对象
+    UIImage *croppedImage = [UIImage imageWithCGImage:imageRef];
+    
+    // 释放CGImageRef
+    CGImageRelease(imageRef);
+    
+    // 保存裁剪后的图像到相册
+    [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+        PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+        [request addResourceWithType:PHAssetResourceTypePhoto data:UIImagePNGRepresentation(croppedImage) options:nil];
+    } completionHandler:^(BOOL success, NSError *error) {
+        if (success) {
+            NSLog(@"裁剪后的图像保存成功");
+        } else {
+            NSLog(@"裁剪后的图像保存失败：%@", error.localizedDescription);
+        }
+    }];
+}
+
 
 #pragma mark - AVCapturePhotoCaptureDelegate
 
@@ -604,6 +636,8 @@
             NSLog(@"图像保存失败：%@", error.localizedDescription);
         }
     }];
+    
+    [self cropImageAndSaveToPhotosAlbum:pngImage];
 }
 
 
