@@ -6,13 +6,20 @@
 //
 
 #import "TDOcrDocCaptureViewController.h"
+#import <AVFoundation/AVFoundation.h>
 
 // UI
 #define WIDTH [UIScreen mainScreen].bounds.size.width
 #define HEIGHT [UIScreen mainScreen].bounds.size.height
 
 
-@interface TDOcrDocCaptureViewController ()
+@interface TDOcrDocCaptureViewController ()<AVCapturePhotoCaptureDelegate>
+
+@property (nonatomic, strong) AVCaptureSession *captureSession;
+
+@property (nonatomic, strong) AVCapturePhotoOutput *photoOutput;
+
+@property (nonatomic, strong) AVCaptureDevice *torchDevice;
 
 @end
 
@@ -20,6 +27,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    [self setupCamera];
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(deviceOrientationDidChange:)
                                                  name:UIDeviceOrientationDidChangeNotification
@@ -28,6 +36,53 @@
     [self refreshUI];
     
     // Do any additional setup after loading the view.
+}
+
+-(void)setupCamera{
+    
+    
+    // 创建 AVCaptureSession
+    self.captureSession = [[AVCaptureSession alloc] init];
+    
+    // 获取后置摄像头设备
+    AVCaptureDevice *backCamera = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    
+    // 创建 AVCaptureDeviceInput
+    NSError *error = nil;
+    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:backCamera error:&error];
+    
+    if (input) {
+        // 将 AVCaptureDeviceInput 添加到 AVCaptureSession
+        if ([self.captureSession canAddInput:input]) {
+            [self.captureSession addInput:input];
+        }
+        
+        // 创建 AVCapturePhotoOutput
+        self.photoOutput = [[AVCapturePhotoOutput alloc] init];
+        
+        // 将 AVCapturePhotoOutput 添加到 AVCaptureSession
+        if ([self.captureSession canAddOutput:self.photoOutput]) {
+            [self.captureSession addOutput:self.photoOutput];
+        }
+        
+        // 创建 AVCaptureVideoPreviewLayer
+        AVCaptureVideoPreviewLayer *previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:self.captureSession];
+        previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+        previewLayer.frame = self.view.bounds;
+        
+        // 将 AVCaptureVideoPreviewLayer 添加到视图层级
+        [self.view.layer addSublayer:previewLayer];
+        
+        // 开始 AVCaptureSession
+        [self.captureSession startRunning];
+        
+        // 获取手电筒设备
+        self.torchDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    }
+    else {
+        NSLog(@"无法获取后置摄像头设备: %@", error.localizedDescription);
+    }
+    
 }
 
 - (void)deviceOrientationDidChange:(NSNotification *)notification {
@@ -48,7 +103,7 @@
     
     UIView* maskView = [[UIView alloc]init];
     [self.view addSubview:maskView];
-    maskView.backgroundColor = [UIColor yellowColor];
+    maskView.backgroundColor = [UIColor clearColor];
     maskView.translatesAutoresizingMaskIntoConstraints = NO;
     
     
@@ -92,7 +147,7 @@
     
     UIView* bottomView = [[UIView alloc]init];
     [self.view addSubview:bottomView];
-    bottomView.backgroundColor = [UIColor greenColor];
+    bottomView.backgroundColor = [UIColor blackColor];
     bottomView.translatesAutoresizingMaskIntoConstraints = NO;
     
     
@@ -102,6 +157,7 @@
     UIButton* captureButton = [[UIButton alloc]init];
     [captureButton setImage:[UIImage imageNamed:@"capture"] forState:UIControlStateNormal];
     [captureButton setImage:[UIImage imageNamed:@"capture"] forState:UIControlStateSelected];
+    [captureButton addTarget:self action:@selector(captureButtonClick:) forControlEvents:UIControlEventTouchUpInside];
     
     [bottomView addSubview:captureButton];
     captureButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -152,7 +208,8 @@
     UIButton* flashButton = [[UIButton alloc]init];
     [flashButton setImage:[UIImage imageNamed:@"flash"] forState:UIControlStateNormal];
     [flashButton setImage:[UIImage imageNamed:@"flash"] forState:UIControlStateSelected];
-    
+    [flashButton addTarget:self action:@selector(flashButtonClick:) forControlEvents:UIControlEventTouchUpInside];
+
     [bottomView addSubview:flashButton];
     flashButton.translatesAutoresizingMaskIntoConstraints = NO;
     CGFloat flashButtonWH = 40;
@@ -162,7 +219,8 @@
     UIButton* closeButton = [[UIButton alloc]init];
     [closeButton setImage:[UIImage imageNamed:@"close"] forState:UIControlStateNormal];
     [closeButton setImage:[UIImage imageNamed:@"close"] forState:UIControlStateSelected];
-    
+    [closeButton addTarget:self action:@selector(closeButtonClick:) forControlEvents:UIControlEventTouchUpInside];
+
     [bottomView addSubview:closeButton];
     closeButton.translatesAutoresizingMaskIntoConstraints = NO;
     CGFloat closeButtonWH = 40;
@@ -473,6 +531,49 @@
         
     }
 }
+
+-(void)captureButtonClick:(UIButton*)button{
+    AVCapturePhotoSettings *photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey: AVVideoCodecTypeJPEG}];
+     [self.photoOutput capturePhotoWithSettings:photoSettings delegate:self];
+}
+
+-(void)flashButtonClick:(UIButton*)button{
+    button.selected = !button.selected;
+    [self.torchDevice lockForConfiguration:nil];
+    [self.torchDevice setTorchMode:button.selected ? AVCaptureTorchModeOn : AVCaptureTorchModeOff];
+}
+
+-(void)closeButtonClick:(UIButton*)button{
+    
+}
+
+
+
+#pragma mark - AVCapturePhotoCaptureDelegate
+
+- (void)captureOutput:(AVCapturePhotoOutput *)output didFinishProcessingPhoto:(AVCapturePhoto *)photo error:(NSError *)error {
+    if (error) {
+        NSLog(@"拍照出错: %@", error.localizedDescription);
+        return;
+    }
+    
+    NSData *photoData = photo.fileDataRepresentation;
+    UIImage *image = [UIImage imageWithData:photoData];
+    
+    // 在这里处理拍摄到的照片，你可以保存到相册、上传服务器等操作
+    
+    // 示例：保存照片到相册
+    UIImageWriteToSavedPhotosAlbum(image, self, @selector(image:didFinishSavingWithError:contextInfo:), nil);
+}
+
+- (void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo {
+    if (error) {
+        NSLog(@"保存照片到相册出错: %@", error.localizedDescription);
+    } else {
+        NSLog(@"照片保存成功");
+    }
+}
+
 
 
 @end
