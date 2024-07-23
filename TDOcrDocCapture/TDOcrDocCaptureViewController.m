@@ -37,125 +37,6 @@
     // 在这里处理方向变化
 }
 
--(void)refreshUI2{
-    // 创建一个 UIView
-    UIView *maskView = [[UIView alloc] init];
-    maskView.translatesAutoresizingMaskIntoConstraints = NO;
-    maskView.backgroundColor = [UIColor lightGrayColor];
-    [self.view addSubview:maskView];
-
-#if 0
-    // 创建一个 UIImageView
-    UIImageView *idMaskImageView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"idmask_portrait_front"]];
-    idMaskImageView.translatesAutoresizingMaskIntoConstraints = NO;
-    idMaskImageView.backgroundColor = [UIColor blueColor];
-    [maskView addSubview:idMaskImageView];
-
-    // 设置 UIImageView 的约束
-    NSLayoutConstraint *idMaskImageViewCenterX2maskViewCenterX = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                       attribute:NSLayoutAttributeCenterX
-                                                                       relatedBy:NSLayoutRelationEqual
-                                                                          toItem:maskView
-                                                                       attribute:NSLayoutAttributeCenterX
-                                                                      multiplier:1.0
-                                                                        constant:0.0];
-    NSLayoutConstraint *idMaskImageViewCenterY2maskViewCenterY = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                       attribute:NSLayoutAttributeCenterY
-                                                                       relatedBy:NSLayoutRelationEqual
-                                                                          toItem:maskView
-                                                                       attribute:NSLayoutAttributeCenterY
-                                                                      multiplier:1.0
-                                                                        constant:0.0];
-    NSLayoutConstraint *idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                     attribute:NSLayoutAttributeWidth
-                                                                     relatedBy:NSLayoutRelationEqual
-                                                                        toItem:maskView
-                                                                     attribute:NSLayoutAttributeWidth
-                                                                    multiplier:1.0
-                                                                      constant:0.0];
-    NSLayoutConstraint *idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                      attribute:NSLayoutAttributeHeight
-                                                                      relatedBy:NSLayoutRelationEqual
-                                                                         toItem:idMaskImageView
-                                                                      attribute:NSLayoutAttributeWidth
-                                                                     multiplier:2.0/3.0
-                                                                       constant:0.0];
-
-    [maskView addConstraints:@[idMaskImageViewCenterX2maskViewCenterX, idMaskImageViewCenterY2maskViewCenterY, idMaskImageViewWidth2SuperViewWidth, idMaskImageViewWithHeightRatio]];
-
-#else
-    UIImageView* idMaskImageView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"idmask_portrait_front"]];
-    [maskView addSubview:idMaskImageView];
-    idMaskImageView.translatesAutoresizingMaskIntoConstraints = NO;
-
-    
-    NSLayoutConstraint* idMaskImageViewCenterX2maskViewCenterX = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeCenterX
-                                                                                    relatedBy:NSLayoutRelationEqual
-                                                                                       toItem:maskView
-                                                                                    attribute:NSLayoutAttributeCenterX
-                                                                                   multiplier:1
-                                                                                     constant:0];
-    
-    NSLayoutConstraint* idMaskImageViewCenterY2maskViewCenterY = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeCenterY
-                                                                                    relatedBy:NSLayoutRelationEqual
-                                                                                       toItem:maskView
-                                                                                    attribute:NSLayoutAttributeCenterY
-                                                                                   multiplier:1
-                                                                                     constant:0];
-    
-    NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeWidth
-                                                                                    relatedBy:NSLayoutRelationEqual
-                                                                                       toItem:maskView
-                                                                                    attribute:NSLayoutAttributeWidth
-                                                                                   multiplier:0.9
-                                                                                     constant:0];
-    
-    NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeHeight
-                                                                                    relatedBy:NSLayoutRelationEqual
-                                                                                       toItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeWidth
-                                                                                   multiplier:(2/3.0)
-                                                                                     constant:0];
-    
-    [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2maskViewCenterX,idMaskImageViewCenterY2maskViewCenterY,idMaskImageViewWithHeightRatio]];
-#endif
-    // 设置 UIView 的约束
-    NSLayoutConstraint *containerCenterXConstraint = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                 attribute:NSLayoutAttributeCenterX
-                                                                                 relatedBy:NSLayoutRelationEqual
-                                                                                    toItem:self.view
-                                                                                 attribute:NSLayoutAttributeCenterX
-                                                                                multiplier:1.0
-                                                                                  constant:0.0];
-    NSLayoutConstraint *containerCenterYConstraint = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                 attribute:NSLayoutAttributeCenterY
-                                                                                 relatedBy:NSLayoutRelationEqual
-                                                                                    toItem:self.view
-                                                                                 attribute:NSLayoutAttributeCenterY
-                                                                                multiplier:1.0
-                                                                                  constant:0.0];
-    NSLayoutConstraint *containerWidthConstraint = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                attribute:NSLayoutAttributeWidth
-                                                                                relatedBy:NSLayoutRelationEqual
-                                                                                   toItem:nil
-                                                                                attribute:NSLayoutAttributeNotAnAttribute
-                                                                               multiplier:1.0
-                                                                                 constant:200.0];
-    NSLayoutConstraint *containerHeightConstraint = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                 attribute:NSLayoutAttributeHeight
-                                                                                 relatedBy:NSLayoutRelationEqual
-                                                                                    toItem:nil
-                                                                                 attribute:NSLayoutAttributeNotAnAttribute
-                                                                                multiplier:1.0
-                                                                                  constant:200.0];
-
-    [self.view addConstraints:@[containerCenterXConstraint, containerCenterYConstraint, containerWidthConstraint, containerHeightConstraint]];
-}
-
 -(void)refreshUI
 {
     [self.view.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
@@ -176,36 +57,36 @@
     idMaskImageView.translatesAutoresizingMaskIntoConstraints = NO;
     
     NSLayoutConstraint* idMaskImageViewCenterX2maskViewCenterX = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeCenterX
-                                                                                    relatedBy:NSLayoutRelationEqual
-                                                                                       toItem:maskView
-                                                                                    attribute:NSLayoutAttributeCenterX
-                                                                                   multiplier:1
-                                                                                     constant:0];
+                                                                                              attribute:NSLayoutAttributeCenterX
+                                                                                              relatedBy:NSLayoutRelationEqual
+                                                                                                 toItem:maskView
+                                                                                              attribute:NSLayoutAttributeCenterX
+                                                                                             multiplier:1
+                                                                                               constant:0];
     
     NSLayoutConstraint* idMaskImageViewCenterY2maskViewCenterY = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeCenterY
-                                                                                    relatedBy:NSLayoutRelationEqual
-                                                                                       toItem:maskView
-                                                                                    attribute:NSLayoutAttributeCenterY
-                                                                                   multiplier:1
-                                                                                     constant:0];
+                                                                                              attribute:NSLayoutAttributeCenterY
+                                                                                              relatedBy:NSLayoutRelationEqual
+                                                                                                 toItem:maskView
+                                                                                              attribute:NSLayoutAttributeCenterY
+                                                                                             multiplier:1
+                                                                                               constant:0];
     
     NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeWidth
-                                                                                    relatedBy:NSLayoutRelationEqual
-                                                                                       toItem:maskView
-                                                                                    attribute:NSLayoutAttributeWidth
-                                                                                   multiplier:0.9
-                                                                                     constant:0];
+                                                                                           attribute:NSLayoutAttributeWidth
+                                                                                           relatedBy:NSLayoutRelationEqual
+                                                                                              toItem:maskView
+                                                                                           attribute:NSLayoutAttributeWidth
+                                                                                          multiplier:0.9
+                                                                                            constant:0];
     
     NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeHeight
-                                                                                    relatedBy:NSLayoutRelationEqual
-                                                                                       toItem:idMaskImageView
-                                                                                    attribute:NSLayoutAttributeWidth
-                                                                                   multiplier:(2/3.0)
-                                                                                     constant:0];
+                                                                                      attribute:NSLayoutAttributeHeight
+                                                                                      relatedBy:NSLayoutRelationEqual
+                                                                                         toItem:idMaskImageView
+                                                                                      attribute:NSLayoutAttributeWidth
+                                                                                     multiplier:(2/3.0)
+                                                                                       constant:0];
     
     [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2maskViewCenterX,idMaskImageViewCenterY2maskViewCenterY,idMaskImageViewWithHeightRatio]];
     
@@ -214,7 +95,7 @@
     bottomView.backgroundColor = [UIColor greenColor];
     bottomView.translatesAutoresizingMaskIntoConstraints = NO;
     
-
+    
     
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
@@ -296,7 +177,7 @@
     }else{
         
         idMaskImageView.image = [UIImage imageNamed:@"idmask_landscape_front"];
-
+        
         NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
                                                                                     attribute:NSLayoutAttributeTop
                                                                                     relatedBy:NSLayoutRelationEqual
