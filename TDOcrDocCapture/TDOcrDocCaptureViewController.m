@@ -21,6 +21,9 @@
 
 @property (nonatomic, strong) AVCaptureDevice *torchDevice;
 
+@property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;
+
+
 @end
 
 @implementation TDOcrDocCaptureViewController
@@ -33,7 +36,9 @@
                                                  name:UIDeviceOrientationDidChangeNotification
                                                object:nil];
     
-    [self refreshUI];
+    UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
+    NSLog(@"orientation-0--::%d",orientation);
+    [self refreshUI:orientation];
     
     // Do any additional setup after loading the view.
 }
@@ -67,12 +72,14 @@
         
         // 创建 AVCaptureVideoPreviewLayer
         AVCaptureVideoPreviewLayer *previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:self.captureSession];
+        self.previewLayer = previewLayer;
         previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
         previewLayer.frame = self.view.bounds;
         
+        
         // 将 AVCaptureVideoPreviewLayer 添加到视图层级
         [self.view.layer addSublayer:previewLayer];
-        
+
         // 开始 AVCaptureSession
         [self.captureSession startRunning];
         
@@ -87,12 +94,12 @@
 
 - (void)deviceOrientationDidChange:(NSNotification *)notification {
     UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
-    NSLog(@"orientation---::%d",orientation);
-    [self refreshUI];
+    NSLog(@"orientation-1--::%d",orientation);
+    [self refreshUI:orientation];
     // 在这里处理方向变化
 }
 
--(void)refreshUI
+-(void)refreshUI:(UIDeviceOrientation)orientation
 {
     [self.view.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         [obj removeFromSuperview];
@@ -100,6 +107,8 @@
     
     [self.view removeConstraints:self.view.constraints];
     
+    self.previewLayer.frame = self.view.bounds;
+
     
     UIView* maskView = [[UIView alloc]init];
     [self.view addSubview:maskView];
@@ -237,6 +246,10 @@
         idMaskImageView.image = [UIImage imageNamed:@"idmask_portrait_front"];
         
         CGFloat buttonMargin = (WIDTH - captureButtonWH) / 4.0;
+        
+        // 设置预览图层的方向为横屏
+        self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
+        
         
         NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
                                                                                     attribute:NSLayoutAttributeTop
@@ -385,6 +398,13 @@
         idMaskImageView.image = [UIImage imageNamed:@"idmask_landscape_front"];
         
         CGFloat buttonMargin = (HEIGHT - captureButtonWH) / 4.0;
+        
+        if(orientation == UIDeviceOrientationLandscapeRight){
+            // 设置预览图层的方向为横屏
+            self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
+        }else{
+            self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
+        }
         
         NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
                                                                                     attribute:NSLayoutAttributeTop
