@@ -7,6 +7,7 @@
 
 #import "TDOcrDocCaptureViewController.h"
 #import <AVFoundation/AVFoundation.h>
+#import <Photos/Photos.h>
 
 // UI
 #define WIDTH [UIScreen mainScreen].bounds.size.width
@@ -22,7 +23,6 @@
 @property (nonatomic, strong) AVCaptureDevice *torchDevice;
 
 @property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;
-
 
 @end
 
@@ -62,12 +62,11 @@
             [self.captureSession addInput:input];
         }
         
-        // 创建 AVCapturePhotoOutput
-        self.photoOutput = [[AVCapturePhotoOutput alloc] init];
-        
-        // 将 AVCapturePhotoOutput 添加到 AVCaptureSession
-        if ([self.captureSession canAddOutput:self.photoOutput]) {
-            [self.captureSession addOutput:self.photoOutput];
+        // 创建输出对象（静态图像）
+        AVCapturePhotoOutput  *photoOutput = [[AVCapturePhotoOutput  alloc] init];
+        self.photoOutput = photoOutput;
+        if ([self.captureSession canAddOutput:photoOutput]) {
+            [self.captureSession addOutput:photoOutput];
         }
         
         // 创建 AVCaptureVideoPreviewLayer
@@ -79,7 +78,7 @@
         
         // 将 AVCaptureVideoPreviewLayer 添加到视图层级
         [self.view.layer addSublayer:previewLayer];
-
+        
         // 开始 AVCaptureSession
         [self.captureSession startRunning];
         
@@ -108,7 +107,7 @@
     [self.view removeConstraints:self.view.constraints];
     
     self.previewLayer.frame = self.view.bounds;
-
+    
     
     UIView* maskView = [[UIView alloc]init];
     [self.view addSubview:maskView];
@@ -218,7 +217,7 @@
     [flashButton setImage:[UIImage imageNamed:@"flash"] forState:UIControlStateNormal];
     [flashButton setImage:[UIImage imageNamed:@"flash"] forState:UIControlStateSelected];
     [flashButton addTarget:self action:@selector(flashButtonClick:) forControlEvents:UIControlEventTouchUpInside];
-
+    
     [bottomView addSubview:flashButton];
     flashButton.translatesAutoresizingMaskIntoConstraints = NO;
     CGFloat flashButtonWH = 40;
@@ -229,7 +228,7 @@
     [closeButton setImage:[UIImage imageNamed:@"close"] forState:UIControlStateNormal];
     [closeButton setImage:[UIImage imageNamed:@"close"] forState:UIControlStateSelected];
     [closeButton addTarget:self action:@selector(closeButtonClick:) forControlEvents:UIControlEventTouchUpInside];
-
+    
     [bottomView addSubview:closeButton];
     closeButton.translatesAutoresizingMaskIntoConstraints = NO;
     CGFloat closeButtonWH = 40;
@@ -554,7 +553,7 @@
 
 -(void)captureButtonClick:(UIButton*)button{
     AVCapturePhotoSettings *photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey: AVVideoCodecTypeJPEG}];
-     [self.photoOutput capturePhotoWithSettings:photoSettings delegate:self];
+    [self.photoOutput capturePhotoWithSettings:photoSettings delegate:self];
 }
 
 -(void)flashButtonClick:(UIButton*)button{
@@ -578,21 +577,35 @@
     }
     
     NSData *photoData = photo.fileDataRepresentation;
+    
     UIImage *image = [UIImage imageWithData:photoData];
+    if (!image) {
+        return;
+    }
     
-    // 在这里处理拍摄到的照片，你可以保存到相册、上传服务器等操作
+    // 调整图像的分辨率以匹配屏幕分辨率
+    CGSize screenSize = [[UIScreen mainScreen] bounds].size;
+    UIGraphicsBeginImageContextWithOptions(screenSize, YES, 0);
+    [image drawInRect:CGRectMake(0, 0, screenSize.width, screenSize.height)];
+    UIImage *pngImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
     
-    // 示例：保存照片到相册
-    UIImageWriteToSavedPhotosAlbum(image, self, @selector(image:didFinishSavingWithError:contextInfo:), nil);
+    // 将UIImage对象转换为PNG格式的NSData
+    NSData *pngImageData = UIImagePNGRepresentation(pngImage);
+    
+    // 保存图像到相册
+    [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+        PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+        [request addResourceWithType:PHAssetResourceTypePhoto data:pngImageData options:nil];
+    } completionHandler:^(BOOL success, NSError *error) {
+        if (success) {
+            NSLog(@"图像保存成功");
+        } else {
+            NSLog(@"图像保存失败：%@", error.localizedDescription);
+        }
+    }];
 }
 
-- (void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo {
-    if (error) {
-        NSLog(@"保存照片到相册出错: %@", error.localizedDescription);
-    } else {
-        NSLog(@"照片保存成功");
-    }
-}
 
 
 
