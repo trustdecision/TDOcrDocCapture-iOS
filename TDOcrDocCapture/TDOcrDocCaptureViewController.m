@@ -13,6 +13,8 @@
 #define WIDTH [UIScreen mainScreen].bounds.size.width
 #define HEIGHT [UIScreen mainScreen].bounds.size.height
 
+#define CROPRATIO  1.1
+
 
 @interface TDOcrDocCaptureViewController ()<AVCapturePhotoCaptureDelegate>
 
@@ -569,14 +571,26 @@
     
 }
 
-
 // 从PNG图片中裁剪指定矩形框区域像素并生成PNG
 - (void)cropImageAndSaveToPhotosAlbum:(UIImage*)originalImage {
     
+    CGFloat originalImageScale = originalImage.scale;
     // 要裁剪的矩形框区域（示例为裁剪左上角100x100的区域）
     CGRect cropRect = [self.idMaskImageView convertRect:self.idMaskImageView.frame toView:self.view];
     
-    CGRect cropRect2 = CGRectMake(cropRect.origin.x * 2, cropRect.origin.y * 2, cropRect.size.width * 2, cropRect.size.height * 2);
+    CGFloat orignalW2x = cropRect.size.width * originalImageScale;
+    CGFloat orignalH2x = cropRect.size.height * originalImageScale;
+    CGFloat cropW = orignalW2x * CROPRATIO;
+    CGFloat cropH = orignalH2x * CROPRATIO;
+    
+    CGFloat cropX = cropRect.origin.x - (cropW - orignalW2x)/2.0;
+    CGFloat cropY = cropRect.origin.y - (cropH - orignalH2x)/2.0;
+
+
+    CGRect cropRect2 = CGRectMake(cropX, cropY, cropW, cropH);
+    
+    
+    NSLog(@"cropRect2--::x:%f,y:%f,w:%f,h:%f",cropRect2.origin.x,cropRect2.origin.y,cropRect2.size.width,cropRect2.size.height);
     // 根据裁剪区域创建CGImageRef
     CGImageRef imageRef = CGImageCreateWithImageInRect(originalImage.CGImage, cropRect2);
     
