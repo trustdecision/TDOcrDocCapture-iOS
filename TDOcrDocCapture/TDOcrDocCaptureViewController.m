@@ -19,7 +19,7 @@
 
 #import <UIKit/UIKit.h>
 #import "UIImage+Rotate.h"
-
+#import "TDOcrDocResultViewController.h"
 @interface UIImage (Rotation)
 
 - (UIImage *)rotateToLandscape:(CGFloat)degrees;
@@ -696,6 +696,9 @@
     if(self.capturedOrientation == UIDeviceOrientationPortraitUpsideDown){
         croppedImage = [croppedImage imageRotatedByDegrees:180];
     }
+    
+    TDOcrDocResultViewController* resultVC = [[TDOcrDocResultViewController alloc]initWithContentImage:croppedImage];
+    [self.navigationController pushViewController:resultVC animated:YES];
     
     // 保存裁剪后的图像到相册
     [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
