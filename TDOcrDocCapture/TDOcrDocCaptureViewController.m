@@ -16,6 +16,37 @@
 #define CROPRATIO  1.1
 
 
+
+#import <UIKit/UIKit.h>
+#import "UIImage+Rotate.h"
+
+@interface UIImage (Rotation)
+- (UIImage *)rotateToLandscape;
+@end
+
+@implementation UIImage (Rotation)
+
+- (UIImage *)rotateToLandscape {
+    CGSize newSize = CGSizeMake(self.size.height, self.size.width);
+    
+    UIGraphicsBeginImageContextWithOptions(newSize, NO, self.scale);
+    
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextRotateCTM(context, M_PI_2); // 顺时针旋转 90 度
+    CGContextTranslateCTM(context, 0, -newSize.width);
+    
+    [self drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
+    
+    UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
+    
+    UIGraphicsEndImageContext();
+    
+    return newImage;
+}
+
+@end
+
+
 @interface TDOcrDocCaptureViewController ()<AVCapturePhotoCaptureDelegate>
 
 @property (nonatomic, strong) AVCaptureSession *captureSession;
@@ -577,16 +608,17 @@
     CGFloat originalImageScale = originalImage.scale;
     // 要裁剪的矩形框区域（示例为裁剪左上角100x100的区域）
     CGRect cropRect = [self.idMaskImageView convertRect:self.idMaskImageView.frame toView:self.view];
-    
+    NSLog(@"cropRect--::x:%f,y:%f,w:%f,h:%f",cropRect.origin.x,cropRect.origin.y,cropRect.size.width,cropRect.size.height);
+
     CGFloat orignalW2x = cropRect.size.width * originalImageScale;
     CGFloat orignalH2x = cropRect.size.height * originalImageScale;
     CGFloat cropW = orignalW2x * CROPRATIO;
     CGFloat cropH = orignalH2x * CROPRATIO;
     
-    CGFloat cropX = cropRect.origin.x - (cropW - orignalW2x)/2.0;
-    CGFloat cropY = cropRect.origin.y - (cropH - orignalH2x)/2.0;
-
-
+    CGFloat cropX = cropRect.origin.x / 2.0 - (cropW - orignalW2x)/2.0;
+    CGFloat cropY = cropRect.origin.y / 2.0 - (cropH - orignalH2x)/2.0;
+    
+    
     CGRect cropRect2 = CGRectMake(cropX, cropY, cropW, cropH);
     
     
@@ -630,12 +662,22 @@
     }
     
     // 调整图像的分辨率以匹配屏幕分辨率
+    CGFloat width = self.view.bounds.size.width;
+    CGFloat height = self.view.bounds.size.height;
     CGSize screenSize = [[UIScreen mainScreen] bounds].size;
-    UIGraphicsBeginImageContextWithOptions(screenSize, YES, 0);
-    [image drawInRect:CGRectMake(0, 0, screenSize.width, screenSize.height)];
+    NSLog(@"width--::%f,height--::%f,screenSize--::%f,%f",width,height,screenSize.width,screenSize.height);
+    if(width < height){
+        UIGraphicsBeginImageContextWithOptions(CGSizeMake(width, height), YES, 0);
+        [image drawInRect:CGRectMake(0, 0, width, height)];
+    }else{
+        UIGraphicsBeginImageContextWithOptions(CGSizeMake(height, width), YES, 0);
+        [image drawInRect:CGRectMake(0, 0, height, width)];
+    }
     UIImage *pngImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-    
+    if(width > height){
+        pngImage = [pngImage imageRotatedByDegrees:-90];
+    }
     // 将UIImage对象转换为PNG格式的NSData
     NSData *pngImageData = UIImagePNGRepresentation(pngImage);
     
@@ -654,7 +696,7 @@
     [self cropImageAndSaveToPhotosAlbum:pngImage];
 }
 
-
-
-
 @end
+
+
+

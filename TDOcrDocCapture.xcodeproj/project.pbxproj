@@ -12,6 +12,10 @@
 		9B3F05972C4E5E3A00442CB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9B3F05962C4E5E3A00442CB3 /* Assets.xcassets */; };
 		9B3F059A2C4E5E3A00442CB3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9B3F05982C4E5E3A00442CB3 /* LaunchScreen.storyboard */; };
 		9B3F059D2C4E5E3A00442CB3 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 9B3F059C2C4E5E3A00442CB3 /* main.m */; };
+		9BDE55BE2C51006F003E5398 /* UIImage+SubImage.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BDE55B62C51006E003E5398 /* UIImage+SubImage.m */; };
+		9BDE55BF2C51006F003E5398 /* UIImage+Gif.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BDE55B92C51006E003E5398 /* UIImage+Gif.m */; };
+		9BDE55C02C51006F003E5398 /* UIImage+Rotate.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BDE55BB2C51006E003E5398 /* UIImage+Rotate.m */; };
+		9BDE55C12C51006F003E5398 /* UIImage+Color.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BDE55BC2C51006E003E5398 /* UIImage+Color.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +28,14 @@
 		9B3F05992C4E5E3A00442CB3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9B3F059B2C4E5E3A00442CB3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9B3F059C2C4E5E3A00442CB3 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		9BDE55B62C51006E003E5398 /* UIImage+SubImage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImage+SubImage.m"; sourceTree = "<group>"; };
+		9BDE55B72C51006E003E5398 /* UIImage+Color.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+Color.h"; sourceTree = "<group>"; };
+		9BDE55B82C51006E003E5398 /* UIImage+Rotate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+Rotate.h"; sourceTree = "<group>"; };
+		9BDE55B92C51006E003E5398 /* UIImage+Gif.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImage+Gif.m"; sourceTree = "<group>"; };
+		9BDE55BA2C51006E003E5398 /* UIImage+SubImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+SubImage.h"; sourceTree = "<group>"; };
+		9BDE55BB2C51006E003E5398 /* UIImage+Rotate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImage+Rotate.m"; sourceTree = "<group>"; };
+		9BDE55BC2C51006E003E5398 /* UIImage+Color.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImage+Color.m"; sourceTree = "<group>"; };
+		9BDE55BD2C51006E003E5398 /* UIImage+Gif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+Gif.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +68,7 @@
 		9B3F05892C4E5E3800442CB3 /* TDOcrDocCapture */ = {
 			isa = PBXGroup;
 			children = (
+				9BDE55B52C51006E003E5398 /* categories */,
 				9B3F058A2C4E5E3800442CB3 /* AppDelegate.h */,
 				9B3F058B2C4E5E3800442CB3 /* AppDelegate.m */,
 				9B3F05902C4E5E3800442CB3 /* TDOcrDocCaptureViewController.h */,
@@ -66,6 +79,21 @@
 				9B3F059C2C4E5E3A00442CB3 /* main.m */,
 			);
 			path = TDOcrDocCapture;
+			sourceTree = "<group>";
+		};
+		9BDE55B52C51006E003E5398 /* categories */ = {
+			isa = PBXGroup;
+			children = (
+				9BDE55B72C51006E003E5398 /* UIImage+Color.h */,
+				9BDE55BC2C51006E003E5398 /* UIImage+Color.m */,
+				9BDE55BD2C51006E003E5398 /* UIImage+Gif.h */,
+				9BDE55B92C51006E003E5398 /* UIImage+Gif.m */,
+				9BDE55B82C51006E003E5398 /* UIImage+Rotate.h */,
+				9BDE55BB2C51006E003E5398 /* UIImage+Rotate.m */,
+				9BDE55BA2C51006E003E5398 /* UIImage+SubImage.h */,
+				9BDE55B62C51006E003E5398 /* UIImage+SubImage.m */,
+			);
+			path = categories;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -137,8 +165,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9BDE55BF2C51006F003E5398 /* UIImage+Gif.m in Sources */,
 				9B3F05922C4E5E3800442CB3 /* TDOcrDocCaptureViewController.m in Sources */,
+				9BDE55C12C51006F003E5398 /* UIImage+Color.m in Sources */,
+				9BDE55C02C51006F003E5398 /* UIImage+Rotate.m in Sources */,
 				9B3F058C2C4E5E3800442CB3 /* AppDelegate.m in Sources */,
+				9BDE55BE2C51006F003E5398 /* UIImage+SubImage.m in Sources */,
 				9B3F059D2C4E5E3A00442CB3 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
