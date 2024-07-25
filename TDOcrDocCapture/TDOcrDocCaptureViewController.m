@@ -69,6 +69,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
     [self setupCamera];
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(deviceOrientationDidChange:)
@@ -117,10 +118,11 @@
         
         // 将 AVCaptureVideoPreviewLayer 添加到视图层级
         [self.view.layer addSublayer:previewLayer];
-        
-        // 开始 AVCaptureSession
-        [self.captureSession startRunning];
-        
+        dispatch_async(dispatch_get_global_queue(0, 0), ^{
+            // 开始 AVCaptureSession
+            [self.captureSession startRunning];
+        });
+
         // 获取手电筒设备
         self.torchDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     }
@@ -139,6 +141,12 @@
 
 -(void)refreshUI:(UIDeviceOrientation)orientation
 {
+    CGFloat width = self.view.bounds.size.width;
+    CGFloat height = self.view.bounds.size.height;
+    
+    
+    BOOL isPortrait = width < height;
+    
     [self.view.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         [obj removeFromSuperview];
     }];
@@ -175,23 +183,43 @@
                                                                                               multiplier:1
                                                                                                 constant:0];
     
-    NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                           attribute:NSLayoutAttributeWidth
-                                                                                           relatedBy:NSLayoutRelationEqual
-                                                                                              toItem:maskView
-                                                                                           attribute:NSLayoutAttributeWidth
-                                                                                          multiplier:0.9
-                                                                                            constant:0];
+    if(isPortrait){
+        NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                               attribute:NSLayoutAttributeWidth
+                                                                                               relatedBy:NSLayoutRelationEqual
+                                                                                                  toItem:maskView
+                                                                                               attribute:NSLayoutAttributeWidth
+                                                                                              multiplier:0.9
+                                                                                                constant:0];
+        
+        NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                          attribute:NSLayoutAttributeHeight
+                                                                                          relatedBy:NSLayoutRelationEqual
+                                                                                             toItem:idMaskImageView
+                                                                                          attribute:NSLayoutAttributeWidth
+                                                                                         multiplier:(2/3.0)
+                                                                                           constant:0];
+        [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
+    }else{
+        NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                               attribute:NSLayoutAttributeHeight
+                                                                                               relatedBy:NSLayoutRelationEqual
+                                                                                                  toItem:maskView
+                                                                                               attribute:NSLayoutAttributeHeight
+                                                                                              multiplier:0.9
+                                                                                                constant:0];
+        
+        NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                          attribute:NSLayoutAttributeHeight
+                                                                                          relatedBy:NSLayoutRelationEqual
+                                                                                             toItem:idMaskImageView
+                                                                                          attribute:NSLayoutAttributeWidth
+                                                                                         multiplier:(2/3.0)
+                                                                                           constant:0];
+        [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
+    }
     
-    NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                      attribute:NSLayoutAttributeHeight
-                                                                                      relatedBy:NSLayoutRelationEqual
-                                                                                         toItem:idMaskImageView
-                                                                                      attribute:NSLayoutAttributeWidth
-                                                                                     multiplier:(2/3.0)
-                                                                                       constant:0];
-    
-    [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
+
     
     UIView* bottomView = [[UIView alloc]init];
     [self.view addSubview:bottomView];
@@ -274,11 +302,7 @@
     CGFloat closeButtonWH = 40;
     
     
-    CGFloat width = self.view.bounds.size.width;
-    CGFloat height = self.view.bounds.size.height;
-    
-    
-    BOOL isPortrait = width < height;
+
     
     // 动态旋转的时候处理
     if(isPortrait){
@@ -288,11 +312,10 @@
             maskImage = [UIImage imageWithCGImage:maskImage.CGImage
                                             scale:maskImage.scale
                                       orientation:UIImageOrientationDown];
-            self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
-
-        }else{
-            self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
+            
         }
+        self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
+
         idMaskImageView.image = maskImage;
         
         CGFloat buttonMargin = (WIDTH - captureButtonWH) / 4.0;
@@ -638,9 +661,27 @@
     CGRect cropRect2 = CGRectMake(cropX, cropY, cropW, cropH);
     
     
+    CGFloat viewW = self.view.bounds.size.width;
+    CGFloat viewH = self.view.bounds.size.height;
+
+    CGFloat imageW = originalImage.size.width;
+    CGFloat imageH = originalImage.size.height;
+
+    // 计算比率
+    CGFloat XRatio = cropX / viewW;
+    CGFloat YRatio = cropY / viewH;
+    CGFloat WRatio = cropW / viewW;
+    CGFloat HRatio = cropH / viewH;
+
+    
     NSLog(@"cropRect2--::x:%f,y:%f,w:%f,h:%f",cropRect2.origin.x,cropRect2.origin.y,cropRect2.size.width,cropRect2.size.height);
+    CGRect cropRect3 = CGRectMake(XRatio * imageW, YRatio * imageH, WRatio * imageW, HRatio * imageH);
+
+    NSLog(@"cropRect3--::x:%f,y:%f,w:%f,h:%f",cropRect3.origin.x,cropRect3.origin.y,cropRect3.size.width,cropRect3.size.height);
+
+    
     // 根据裁剪区域创建CGImageRef
-    CGImageRef imageRef = CGImageCreateWithImageInRect(originalImage.CGImage, cropRect2);
+    CGImageRef imageRef = CGImageCreateWithImageInRect(originalImage.CGImage, cropRect3);
     
     // 创建UIImage对象
     UIImage *croppedImage = [UIImage imageWithCGImage:imageRef];
@@ -650,8 +691,8 @@
     
     UIImageOrientation imageOrientation = croppedImage.imageOrientation;
     NSLog(@"croppedImage-1---::%d",imageOrientation);
-
-
+    
+    
     if(self.capturedOrientation == UIDeviceOrientationPortraitUpsideDown){
         croppedImage = [croppedImage imageRotatedByDegrees:180];
     }
@@ -686,35 +727,36 @@
     }
     
     // 调整图像的分辨率以匹配屏幕分辨率
-    CGFloat width = self.view.bounds.size.width;
-    CGFloat height = self.view.bounds.size.height;
+    CGFloat width = image.size.width;
+    CGFloat height = image.size.height;
+    CGFloat scale = image.scale;
     CGSize screenSize = [[UIScreen mainScreen] bounds].size;
     NSLog(@"width--::%f,height--::%f,screenSize--::%f,%f",width,height,screenSize.width,screenSize.height);
     if(width < height){
-        UIGraphicsBeginImageContextWithOptions(CGSizeMake(width, height), YES, 0);
+        UIGraphicsBeginImageContextWithOptions(CGSizeMake(width, height), YES, scale);
         [image drawInRect:CGRectMake(0, 0, width, height)];
     }else{
-        UIGraphicsBeginImageContextWithOptions(CGSizeMake(height, width), YES, 0);
+        UIGraphicsBeginImageContextWithOptions(CGSizeMake(height, width), YES, scale);
         [image drawInRect:CGRectMake(0, 0, height, width)];
     }
     UIImage *pngImage = UIGraphicsGetImageFromCurrentImageContext();
     
     UIImageOrientation imageOrientation = pngImage.imageOrientation;
-
+    
     NSLog(@"imageOrientation-1---::%d",imageOrientation);
     
     UIGraphicsEndImageContext();
     
-    if(width > height){
+   // if(width > height){
         if(self.capturedOrientation == UIDeviceOrientationLandscapeLeft){
             pngImage = [pngImage imageRotatedByDegrees:-90];
-        }else{
+        }else if(self.capturedOrientation == UIDeviceOrientationLandscapeRight){
             pngImage = [pngImage imageRotatedByDegrees:90];
         }
-    }
+   // }
     
     [self cropImageAndSaveToPhotosAlbum:pngImage];
-
+    
     if(self.capturedOrientation == UIDeviceOrientationPortraitUpsideDown){
         pngImage = [pngImage imageRotatedByDegrees:180];
     }
