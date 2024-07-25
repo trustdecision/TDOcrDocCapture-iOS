@@ -52,6 +52,8 @@
 @interface TDOcrDocCaptureViewController ()<AVCapturePhotoCaptureDelegate>
 
 @property (nonatomic, strong) AVCaptureSession *captureSession;
+// 记录点击拍照按钮一瞬间，设备的方向
+@property (nonatomic, assign) UIDeviceOrientation capturedOrientation;
 
 @property (nonatomic, strong) AVCapturePhotoOutput *photoOutput;
 
@@ -280,12 +282,21 @@
     
     // 动态旋转的时候处理
     if(isPortrait){
-        idMaskImageView.image = [UIImage imageNamed:@"idmask_portrait_front"];
+        UIImage* maskImage = [UIImage imageNamed:@"idmask_portrait_front"];
+        
+        if(orientation == UIDeviceOrientationPortraitUpsideDown){
+            maskImage = [UIImage imageWithCGImage:maskImage.CGImage
+                                            scale:maskImage.scale
+                                      orientation:UIImageOrientationDown];
+            self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
+
+        }else{
+            self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
+        }
+        idMaskImageView.image = maskImage;
         
         CGFloat buttonMargin = (WIDTH - captureButtonWH) / 4.0;
         
-        // 设置预览图层的方向为横屏
-        self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
         
         
         NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
@@ -590,6 +601,7 @@
 }
 
 -(void)captureButtonClick:(UIButton*)button{
+    self.capturedOrientation = [[UIDevice currentDevice] orientation];
     AVCapturePhotoSettings *photoSettings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey: AVVideoCodecTypeJPEG}];
     [self.photoOutput capturePhotoWithSettings:photoSettings delegate:self];
 }
@@ -613,7 +625,7 @@
     // 要裁剪的矩形框区域（示例为裁剪左上角100x100的区域）
     CGRect cropRect = [self.idMaskImageView convertRect:self.idMaskImageView.frame toView:self.view];
     NSLog(@"cropRect--::x:%f,y:%f,w:%f,h:%f",cropRect.origin.x,cropRect.origin.y,cropRect.size.width,cropRect.size.height);
-
+    
     CGFloat orignalW2x = cropRect.size.width * originalImageScale;
     CGFloat orignalH2x = cropRect.size.height * originalImageScale;
     CGFloat cropW = orignalW2x * CROPRATIO;
@@ -635,6 +647,14 @@
     
     // 释放CGImageRef
     CGImageRelease(imageRef);
+    
+    UIImageOrientation imageOrientation = croppedImage.imageOrientation;
+    NSLog(@"croppedImage-1---::%d",imageOrientation);
+
+
+    if(self.capturedOrientation == UIDeviceOrientationPortraitUpsideDown){
+        croppedImage = [croppedImage imageRotatedByDegrees:180];
+    }
     
     // 保存裁剪后的图像到相册
     [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
@@ -678,10 +698,27 @@
         [image drawInRect:CGRectMake(0, 0, height, width)];
     }
     UIImage *pngImage = UIGraphicsGetImageFromCurrentImageContext();
+    
+    UIImageOrientation imageOrientation = pngImage.imageOrientation;
+
+    NSLog(@"imageOrientation-1---::%d",imageOrientation);
+    
     UIGraphicsEndImageContext();
+    
     if(width > height){
-        pngImage = [pngImage imageRotatedByDegrees:-90];
-      }
+        if(self.capturedOrientation == UIDeviceOrientationLandscapeLeft){
+            pngImage = [pngImage imageRotatedByDegrees:-90];
+        }else{
+            pngImage = [pngImage imageRotatedByDegrees:90];
+        }
+    }
+    
+    [self cropImageAndSaveToPhotosAlbum:pngImage];
+
+    if(self.capturedOrientation == UIDeviceOrientationPortraitUpsideDown){
+        pngImage = [pngImage imageRotatedByDegrees:180];
+    }
+    
     // 将UIImage对象转换为PNG格式的NSData
     NSData *pngImageData = UIImagePNGRepresentation(pngImage);
     
@@ -697,7 +734,6 @@
         }
     }];
     
-    [self cropImageAndSaveToPhotosAlbum:pngImage];
 }
 
 @end
