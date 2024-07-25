@@ -21,18 +21,20 @@
 #import "UIImage+Rotate.h"
 
 @interface UIImage (Rotation)
-- (UIImage *)rotateToLandscape;
+
+- (UIImage *)rotateToLandscape:(CGFloat)degrees;
+
 @end
 
 @implementation UIImage (Rotation)
 
-- (UIImage *)rotateToLandscape {
+- (UIImage *)rotateToLandscape:(CGFloat)degrees {
     CGSize newSize = CGSizeMake(self.size.height, self.size.width);
     
     UIGraphicsBeginImageContextWithOptions(newSize, NO, self.scale);
     
     CGContextRef context = UIGraphicsGetCurrentContext();
-    CGContextRotateCTM(context, M_PI_2); // 顺时针旋转 90 度
+    CGContextRotateCTM(context, degrees); // 顺时针旋转 90 度
     CGContextTranslateCTM(context, 0, -newSize.width);
     
     [self drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
@@ -606,6 +608,8 @@
 - (void)cropImageAndSaveToPhotosAlbum:(UIImage*)originalImage {
     
     CGFloat originalImageScale = originalImage.scale;
+    
+    NSLog(@"originalImage--::size::%f,%f--scale::%f",originalImage.size.width,originalImage.size.height,originalImageScale);
     // 要裁剪的矩形框区域（示例为裁剪左上角100x100的区域）
     CGRect cropRect = [self.idMaskImageView convertRect:self.idMaskImageView.frame toView:self.view];
     NSLog(@"cropRect--::x:%f,y:%f,w:%f,h:%f",cropRect.origin.x,cropRect.origin.y,cropRect.size.width,cropRect.size.height);
@@ -615,8 +619,8 @@
     CGFloat cropW = orignalW2x * CROPRATIO;
     CGFloat cropH = orignalH2x * CROPRATIO;
     
-    CGFloat cropX = cropRect.origin.x / 2.0 - (cropW - orignalW2x)/2.0;
-    CGFloat cropY = cropRect.origin.y / 2.0 - (cropH - orignalH2x)/2.0;
+    CGFloat cropX = cropRect.origin.x / (2.0 / originalImageScale) - (cropW - orignalW2x)/2.0;
+    CGFloat cropY = cropRect.origin.y / (2.0 / originalImageScale) - (cropH - orignalH2x)/2.0;
     
     
     CGRect cropRect2 = CGRectMake(cropX, cropY, cropW, cropH);
@@ -677,7 +681,7 @@
     UIGraphicsEndImageContext();
     if(width > height){
         pngImage = [pngImage imageRotatedByDegrees:-90];
-    }
+      }
     // 将UIImage对象转换为PNG格式的NSData
     NSData *pngImageData = UIImagePNGRepresentation(pngImage);
     
