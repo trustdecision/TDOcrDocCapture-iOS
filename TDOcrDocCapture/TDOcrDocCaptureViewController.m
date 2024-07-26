@@ -8,6 +8,7 @@
 #import "TDOcrDocCaptureViewController.h"
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
+#import "UIImage+ImageCompress.h"
 
 // UI
 #define WIDTH [UIScreen mainScreen].bounds.size.width
@@ -16,8 +17,10 @@
 //由角度转换弧度
 #define kDegreesToRadian(x)      (M_PI * (x) / 180.0)
 
+// 扩大剪切的比率
 #define CROPRATIO  1.1
-
+// 目标图标的大小
+#define TARGET_IMAGE_KB 300
 
 
 #import <UIKit/UIKit.h>
@@ -666,6 +669,152 @@
     
 }
 
+/*!
+ *  @brief 使图片压缩后刚好小于指定大小
+ *
+ *  @param image 当前要压缩的图 maxLength 压缩后的大小
+ *
+ *  @return 图片对象
+ */
+//图片质量压缩到某一范围内，如果后面用到多，可以抽成分类或者工具类,这里压缩递减比二分的运行时间长，二分可以限制下限。
+- (UIImage *)compressImageSize:(UIImage *)image toByte:(NSUInteger)maxLength{
+    //首先判断原图大小是否在要求内，如果满足要求则不进行压缩，over
+    CGFloat compression = 1;
+    NSData *data = UIImageJPEGRepresentation(image, compression);
+    if (data.length < maxLength) return image;
+    //原图大小超过范围，先进行“压处理”，这里 压缩比 采用二分法进行处理，6次二分后的最小压缩比是0.015625，已经够小了
+    CGFloat max = 1;
+    CGFloat min = 0;
+    for (int i = 0; i < 6; ++i) {
+        compression = (max + min) / 2;
+        data = UIImageJPEGRepresentation(image, compression);
+        if (data.length < maxLength * 0.9) {
+            min = compression;
+        } else if (data.length > maxLength) {
+            max = compression;
+        } else {
+            break;
+        }
+    }
+    //判断“压处理”的结果是否符合要求，符合要求就over
+    UIImage *resultImage = [UIImage imageWithData:data];
+    if (data.length < maxLength) return resultImage;
+    
+    //缩处理，直接用大小的比例作为缩处理的比例进行处理，因为有取整处理，所以一般是需要两次处理
+    NSUInteger lastDataLength = 0;
+    while (data.length > maxLength && data.length != lastDataLength) {
+        lastDataLength = data.length;
+        //获取处理后的尺寸
+        CGFloat ratio = (CGFloat)maxLength / data.length;
+        CGSize size = CGSizeMake((NSUInteger)(resultImage.size.width * sqrtf(ratio)),
+                                 (NSUInteger)(resultImage.size.height * sqrtf(ratio)));
+        //通过图片上下文进行处理图片
+        UIGraphicsBeginImageContext(size);
+        [resultImage drawInRect:CGRectMake(0, 0, size.width, size.height)];
+        resultImage = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        //获取处理后图片的大小
+        data = UIImageJPEGRepresentation(resultImage, compression);
+    }
+    
+    return resultImage;
+}
+
+- (UIImage *)scaleImage:(UIImage *)image byScaleFactor:(CGFloat)scaleFactor {
+    CGSize originalSize = image.size;
+    CGSize scaledSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);
+    
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:scaledSize];
+    UIImage *scaledImage = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
+        [image drawInRect:CGRectMake(0, 0, scaledSize.width, scaledSize.height)];
+    }];
+    
+    return scaledImage;
+}
+- (void)compressedImageFiles:(UIImage *)image
+                     imageKB:(CGFloat)fImageKBytes imageBlock:(void(^)(UIImage *compressImage))block{
+    //二分法压缩图片
+    CGFloat compression = 1;
+    NSData *imageData = UIImageJPEGRepresentation(image, compression);
+    NSUInteger fImageBytes = fImageKBytes * 1024;//需要压缩的字节Byte，iOS系统内部的进制1000
+    if (imageData.length <= fImageBytes){
+        UIImage *resultImage = [UIImage imageWithData:imageData];
+
+        block(resultImage);
+        return;
+    }
+    CGFloat max = 1;
+    CGFloat min = 0;
+    //指数二分处理，s首先计算最小值
+    compression = pow(2, -6);
+    imageData = UIImageJPEGRepresentation(image, compression);
+    if (imageData.length < fImageBytes) {
+        //二分最大10次，区间范围精度最大可达0.00097657；最大6次，精度可达0.015625
+        for (int i = 0; i < 6; ++i) {
+            compression = (max + min) / 2;
+            imageData = UIImageJPEGRepresentation(image, compression);
+            //容错区间范围0.9～1.0
+            if (imageData.length < fImageBytes * 0.9) {
+                min = compression;
+            } else if (imageData.length > fImageBytes) {
+                max = compression;
+            } else {
+                break;
+            }
+        }
+        
+        UIImage *resultImage = [UIImage imageWithData:imageData];
+
+        block(resultImage);
+        return;
+    }
+    
+    // 对于图片太大上面的压缩比即使很小压缩出来的图片也是很大，不满足使用。
+    //然后再一步绘制压缩处理
+    UIImage *resultImage = [UIImage imageWithData:imageData];
+    while (imageData.length > fImageBytes) {
+        @autoreleasepool {
+            CGFloat ratio = (CGFloat)fImageBytes / imageData.length;
+            //使用NSUInteger不然由于精度问题，某些图片会有白边
+            NSLog(@">>>>>>>>>>>>>>>>>%f>>>>>>>>>>>>%f>>>>>>>>>>>%f",resultImage.size.width,sqrtf(ratio),resultImage.size.height);
+            CGSize size = CGSizeMake((NSUInteger)(resultImage.size.width * sqrtf(ratio)),
+                                     (NSUInteger)(resultImage.size.height * sqrtf(ratio)));
+            //            resultImage = [self drawWithWithImage:resultImage Size:size];
+            //            resultImage = [self scaledImageWithData:imageData withSize:size scale:resultImage.scale orientation:UIImageOrientationUp];
+            resultImage = [self thumbnailForData:imageData maxPixelSize:MAX(size.width, size.height)];
+            imageData = UIImageJPEGRepresentation(resultImage, compression);
+        }
+    }
+    
+    //   整理后的图片尽量不要用UIImageJPEGRepresentation方法转换，后面参数1.0并不表示的是原质量转换。
+    block(resultImage);
+}
+
+
+- (UIImage *)thumbnailForData:(NSData *)data maxPixelSize:(NSUInteger)size {
+    CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
+    CGImageSourceRef source = CGImageSourceCreateWithDataProvider(provider, NULL);
+    
+    CGImageRef imageRef = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef) @{
+        (NSString *)kCGImageSourceCreateThumbnailFromImageAlways : @YES,
+        (NSString *)kCGImageSourceThumbnailMaxPixelSize : @(size),
+        (NSString *)kCGImageSourceCreateThumbnailWithTransform : @YES,
+    });
+    CFRelease(source);
+    CFRelease(provider);
+    
+    if (!imageRef) {
+        return nil;
+    }
+    
+    UIImage *toReturn = [UIImage imageWithCGImage:imageRef];
+    
+    CFRelease(imageRef);
+    
+    return toReturn;
+    
+}
+
 // 从PNG图片中裁剪指定矩形框区域像素并生成PNG
 - (void)cropImageAndSaveToPhotosAlbum:(UIImage*)originalImage {
     
@@ -711,11 +860,12 @@
     CGImageRef imageRef = CGImageCreateWithImageInRect(originalImage.CGImage, cropRect3);
     
     // 创建UIImage对象
-    UIImage *croppedImage = [UIImage imageWithCGImage:imageRef];
+    __block UIImage *croppedImage = [UIImage imageWithCGImage:imageRef];
     
     // 释放CGImageRef
     CGImageRelease(imageRef);
     
+
     UIImageOrientation imageOrientation = croppedImage.imageOrientation;
     NSLog(@"croppedImage-1---::%d",imageOrientation);
     
@@ -724,11 +874,31 @@
         croppedImage = [croppedImage imageRotatedByDegrees:180];
     }
     
+    // 将 UIImage 转换为 PNG 格式的 NSData
+    NSData *croppedImageData = UIImagePNGRepresentation(croppedImage);
+
+    // 获取 PNG 图片占用的字节数
+    NSUInteger croppedImageSizeInBytes = croppedImageData.length;
+
+    NSLog(@"croppedImage--1 图片占用 %lu 字节", (unsigned long)croppedImageSizeInBytes);
+    
+    CGFloat scaleRatio =   TARGET_IMAGE_KB*1024.0 / croppedImageSizeInBytes;
+    if(scaleRatio < 1){
+        croppedImage = [UIImage compressImage:croppedImage compressRatio:scaleRatio];
+    }
+    
+    // 将 UIImage 转换为 PNG 格式的 NSData
+    croppedImageData = UIImagePNGRepresentation(croppedImage);
+
+    // 获取 PNG 图片占用的字节数
+    croppedImageSizeInBytes = croppedImageData.length;
+
+    NSLog(@"croppedImage--2 图片占用 %lu 字节", (unsigned long)croppedImageSizeInBytes);
+    
     TDOcrDocResultViewController* resultVC = [[TDOcrDocResultViewController alloc]initWithContentImage:croppedImage];
    // [self.navigationController pushViewController:resultVC animated:YES];
     resultVC.modalPresentationStyle = UIModalPresentationOverFullScreen;
     [self presentViewController:resultVC animated:YES completion:nil];
-    
     // 保存裁剪后的图像到相册
     [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
         PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
