@@ -20,6 +20,14 @@
     return NO;
 }
 
+-(UIInterfaceOrientationMask)supportedInterfaceOrientations{
+    return UIInterfaceOrientationMaskPortrait;
+}
+
+-(UIInterfaceOrientation)preferredInterfaceOrientationForPresentation{
+    return UIInterfaceOrientationPortrait;
+}
+
 -(instancetype)initWithContentImage:(UIImage*)contentImage
 {
     if(self = [super init]){
@@ -123,13 +131,6 @@
                                                                                           multiplier:1
                                                                                             constant:-60];
     
-    NSLayoutConstraint* retryButtonWidth = [NSLayoutConstraint constraintWithItem:retryButton
-                                                                        attribute:NSLayoutAttributeWidth
-                                                                        relatedBy:NSLayoutRelationEqual
-                                                                           toItem:nil
-                                                                        attribute:NSLayoutAttributeWidth
-                                                                       multiplier:1.0
-                                                                         constant:buttonW];
     
     NSLayoutConstraint* retryButtonHeight = [NSLayoutConstraint constraintWithItem:retryButton
                                                                          attribute:NSLayoutAttributeHeight
@@ -139,7 +140,7 @@
                                                                         multiplier:1.0
                                                                           constant:buttonH];
     
-    [self.view addConstraints:@[retryButtonLeft,retryButtonBottom,retryButtonWidth,retryButtonHeight]];
+    [self.view addConstraints:@[retryButtonLeft,retryButtonBottom,retryButtonHeight]];
     
     UIButton * continueButton = [[UIButton alloc]init];
     continueButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -156,7 +157,7 @@
     
     
     
-    NSLayoutConstraint* continueButtonLeft= [NSLayoutConstraint constraintWithItem:continueButton
+    NSLayoutConstraint* continueButtonRight = [NSLayoutConstraint constraintWithItem:continueButton
                                                                                           attribute:NSLayoutAttributeRight
                                                                                           relatedBy:NSLayoutRelationEqual
                                                                                              toItem:self.view
@@ -172,13 +173,23 @@
                                                                                           multiplier:1
                                                                                             constant:-60];
     
-    NSLayoutConstraint* continueButtonWidth = [NSLayoutConstraint constraintWithItem:continueButton
-                                                                        attribute:NSLayoutAttributeWidth
+    
+    
+    NSLayoutConstraint* continueButtonLeft = [NSLayoutConstraint constraintWithItem:continueButton
+                                                                        attribute:NSLayoutAttributeLeft
                                                                         relatedBy:NSLayoutRelationEqual
-                                                                           toItem:nil
-                                                                        attribute:NSLayoutAttributeWidth
+                                                                           toItem:retryButton
+                                                                        attribute:NSLayoutAttributeRight
                                                                        multiplier:1.0
-                                                                         constant:buttonW];
+                                                                         constant:buttonMargin];
+    
+    NSLayoutConstraint* continueButtonWidth = [NSLayoutConstraint constraintWithItem:continueButton
+                                                                         attribute:NSLayoutAttributeWidth
+                                                                         relatedBy:NSLayoutRelationEqual
+                                                                            toItem:retryButton
+                                                                         attribute:NSLayoutAttributeWidth
+                                                                        multiplier:1.0
+                                                                          constant:0];
     
     NSLayoutConstraint* continueButtonHeight = [NSLayoutConstraint constraintWithItem:continueButton
                                                                          attribute:NSLayoutAttributeHeight
@@ -188,7 +199,7 @@
                                                                         multiplier:1.0
                                                                           constant:buttonH];
     
-    [self.view addConstraints:@[continueButtonLeft,continueButtonBottom,continueButtonWidth,continueButtonHeight]];
+    [self.view addConstraints:@[continueButtonLeft,continueButtonBottom,continueButtonRight,continueButtonWidth,continueButtonHeight]];
     
     
 }

@@ -13,12 +13,14 @@
 #define WIDTH [UIScreen mainScreen].bounds.size.width
 #define HEIGHT [UIScreen mainScreen].bounds.size.height
 
+//由角度转换弧度
+#define kDegreesToRadian(x)      (M_PI * (x) / 180.0)
+
 #define CROPRATIO  1.1
 
 
 
 #import <UIKit/UIKit.h>
-#import "UIImage+Rotate.h"
 #import "TDOcrDocResultViewController.h"
 @interface UIImage (Rotation)
 
@@ -28,22 +30,43 @@
 
 @implementation UIImage (Rotation)
 
-- (UIImage *)rotateToLandscape:(CGFloat)degrees {
-    CGSize newSize = CGSizeMake(self.size.height, self.size.width);
+/** 将图片旋转弧度radians */
+- (UIImage *)imageRotatedByRadians:(CGFloat)radians
+{
+    CGFloat imageWidth = self.size.width*1;
+    CGFloat imageHeight = self.size.height*1;
+
+    // calculate the size of the rotated view's containing box for our drawing space
+    UIView *rotatedViewBox = [[UIView alloc] initWithFrame:CGRectMake(0,0,imageWidth, imageHeight)];
+    CGAffineTransform t = CGAffineTransformMakeRotation(radians);
+    rotatedViewBox.transform = t;
+    CGSize rotatedSize = rotatedViewBox.frame.size;
     
-    UIGraphicsBeginImageContextWithOptions(newSize, NO, self.scale);
+    // Create the bitmap context
+    UIGraphicsBeginImageContextWithOptions(rotatedSize, NO, self.scale);
+
+    CGContextRef bitmap = UIGraphicsGetCurrentContext();
     
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    CGContextRotateCTM(context, degrees); // 顺时针旋转 90 度
-    CGContextTranslateCTM(context, 0, -newSize.width);
+    // Move the origin to the middle of the image so we will rotate and scale around the center.
+    CGContextTranslateCTM(bitmap, rotatedSize.width/2, rotatedSize.height/2);
     
-    [self drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
+    //   // Rotate the image context
+    CGContextRotateCTM(bitmap, radians);
+    
+    // Now, draw the rotated/scaled image into the context
+    CGContextScaleCTM(bitmap, 1.0, -1.0);
+    CGContextDrawImage(bitmap, CGRectMake(-imageWidth / 2, -imageHeight / 2, imageWidth, imageHeight), [self CGImage]);
     
     UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
-    
     UIGraphicsEndImageContext();
     
     return newImage;
+}
+
+/** 将图片旋转角度degrees */
+- (UIImage *)imageRotatedByDegrees:(CGFloat)degrees
+{
+    return [self imageRotatedByRadians:kDegreesToRadian(degrees)];
 }
 
 @end
@@ -67,6 +90,12 @@
 
 @implementation TDOcrDocCaptureViewController
 
+-(void)viewDidAppear:(BOOL)animated{
+    [super viewDidAppear:animated];
+    UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
+    NSLog(@"orientation-0--::%d",orientation);
+    [self refreshUI:orientation];
+}
 - (void)viewDidLoad {
     [super viewDidLoad];
     
@@ -76,9 +105,7 @@
                                                  name:UIDeviceOrientationDidChangeNotification
                                                object:nil];
     
-    UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
-    NSLog(@"orientation-0--::%d",orientation);
-    [self refreshUI:orientation];
+
     
     // Do any additional setup after loading the view.
 }
