@@ -29,6 +29,15 @@
 
 - (UIImage *)rotateToLandscape:(CGFloat)degrees;
 
+/**
+ Compress a UIImage to the specified ratio
+ 
+ @param image The image to compress
+ @param ratio The compress ratio to compress to
+ 
+ */
+- (UIImage *)compressWithCompressRatio:(CGFloat)ratio;
+
 @end
 
 @implementation UIImage (Rotation)
@@ -70,6 +79,61 @@
 - (UIImage *)imageRotatedByDegrees:(CGFloat)degrees
 {
     return [self imageRotatedByRadians:kDegreesToRadian(degrees)];
+}
+
+
+- (UIImage *)compressWithCompressRatio:(CGFloat)ratio
+{
+    return [self compressImageWithCompressRatio:ratio maxCompressRatio:ratio];
+}
+
+- (UIImage *)compressImageWithCompressRatio:(CGFloat)ratio maxCompressRatio:(CGFloat)maxRatio
+{
+    UIImage *image = self;
+    //We define the max and min resolutions to shrink to
+    int MIN_UPLOAD_RESOLUTION = 1136 * 640;
+    int MAX_UPLOAD_SIZE = 50;
+    
+    float factor;
+    float currentResolution = image.size.height * image.size.width;
+    
+    //We first shrink the image a little bit in order to compress it a little bit more
+    if (currentResolution > MIN_UPLOAD_RESOLUTION) {
+        factor = sqrt(currentResolution / MIN_UPLOAD_RESOLUTION) * 2;
+        image = [self scaleDownWithSize:CGSizeMake(image.size.width / factor, image.size.height / factor)];
+    }
+    
+    //Compression settings
+    CGFloat compression = ratio;
+    CGFloat maxCompression = maxRatio;
+    
+    //We loop into the image data to compress accordingly to the compression ratio
+    NSData *imageData = UIImageJPEGRepresentation(image, compression);
+    while ([imageData length] > MAX_UPLOAD_SIZE && compression > maxCompression) {
+        compression -= 0.10;
+        imageData = UIImageJPEGRepresentation(image, compression);
+    }
+    
+    //Retuns the compressed image
+    return [[UIImage alloc] initWithData:imageData];
+}
+
+
+
+- (UIImage*)scaleDownWithSize:(CGSize)newSize
+{
+    UIImage *image = self;
+    //We prepare a bitmap with the new size
+    UIGraphicsBeginImageContextWithOptions(newSize, YES, 0.0);
+    
+    //Draws a rect for the image
+    [image drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
+    
+    //We set the scaled image from the context
+    UIImage* scaledImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return scaledImage;
 }
 
 @end
@@ -720,101 +784,6 @@
     return resultImage;
 }
 
-- (UIImage *)scaleImage:(UIImage *)image byScaleFactor:(CGFloat)scaleFactor {
-    CGSize originalSize = image.size;
-    CGSize scaledSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);
-    
-    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:scaledSize];
-    UIImage *scaledImage = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
-        [image drawInRect:CGRectMake(0, 0, scaledSize.width, scaledSize.height)];
-    }];
-    
-    return scaledImage;
-}
-- (void)compressedImageFiles:(UIImage *)image
-                     imageKB:(CGFloat)fImageKBytes imageBlock:(void(^)(UIImage *compressImage))block{
-    //二分法压缩图片
-    CGFloat compression = 1;
-    NSData *imageData = UIImageJPEGRepresentation(image, compression);
-    NSUInteger fImageBytes = fImageKBytes * 1024;//需要压缩的字节Byte，iOS系统内部的进制1000
-    if (imageData.length <= fImageBytes){
-        UIImage *resultImage = [UIImage imageWithData:imageData];
-
-        block(resultImage);
-        return;
-    }
-    CGFloat max = 1;
-    CGFloat min = 0;
-    //指数二分处理，s首先计算最小值
-    compression = pow(2, -6);
-    imageData = UIImageJPEGRepresentation(image, compression);
-    if (imageData.length < fImageBytes) {
-        //二分最大10次，区间范围精度最大可达0.00097657；最大6次，精度可达0.015625
-        for (int i = 0; i < 6; ++i) {
-            compression = (max + min) / 2;
-            imageData = UIImageJPEGRepresentation(image, compression);
-            //容错区间范围0.9～1.0
-            if (imageData.length < fImageBytes * 0.9) {
-                min = compression;
-            } else if (imageData.length > fImageBytes) {
-                max = compression;
-            } else {
-                break;
-            }
-        }
-        
-        UIImage *resultImage = [UIImage imageWithData:imageData];
-
-        block(resultImage);
-        return;
-    }
-    
-    // 对于图片太大上面的压缩比即使很小压缩出来的图片也是很大，不满足使用。
-    //然后再一步绘制压缩处理
-    UIImage *resultImage = [UIImage imageWithData:imageData];
-    while (imageData.length > fImageBytes) {
-        @autoreleasepool {
-            CGFloat ratio = (CGFloat)fImageBytes / imageData.length;
-            //使用NSUInteger不然由于精度问题，某些图片会有白边
-            NSLog(@">>>>>>>>>>>>>>>>>%f>>>>>>>>>>>>%f>>>>>>>>>>>%f",resultImage.size.width,sqrtf(ratio),resultImage.size.height);
-            CGSize size = CGSizeMake((NSUInteger)(resultImage.size.width * sqrtf(ratio)),
-                                     (NSUInteger)(resultImage.size.height * sqrtf(ratio)));
-            //            resultImage = [self drawWithWithImage:resultImage Size:size];
-            //            resultImage = [self scaledImageWithData:imageData withSize:size scale:resultImage.scale orientation:UIImageOrientationUp];
-            resultImage = [self thumbnailForData:imageData maxPixelSize:MAX(size.width, size.height)];
-            imageData = UIImageJPEGRepresentation(resultImage, compression);
-        }
-    }
-    
-    //   整理后的图片尽量不要用UIImageJPEGRepresentation方法转换，后面参数1.0并不表示的是原质量转换。
-    block(resultImage);
-}
-
-
-- (UIImage *)thumbnailForData:(NSData *)data maxPixelSize:(NSUInteger)size {
-    CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
-    CGImageSourceRef source = CGImageSourceCreateWithDataProvider(provider, NULL);
-    
-    CGImageRef imageRef = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef) @{
-        (NSString *)kCGImageSourceCreateThumbnailFromImageAlways : @YES,
-        (NSString *)kCGImageSourceThumbnailMaxPixelSize : @(size),
-        (NSString *)kCGImageSourceCreateThumbnailWithTransform : @YES,
-    });
-    CFRelease(source);
-    CFRelease(provider);
-    
-    if (!imageRef) {
-        return nil;
-    }
-    
-    UIImage *toReturn = [UIImage imageWithCGImage:imageRef];
-    
-    CFRelease(imageRef);
-    
-    return toReturn;
-    
-}
-
 // 从PNG图片中裁剪指定矩形框区域像素并生成PNG
 - (void)cropImageAndSaveToPhotosAlbum:(UIImage*)originalImage {
     
@@ -884,7 +853,7 @@
     
     CGFloat scaleRatio =   TARGET_IMAGE_KB*1024.0 / croppedImageSizeInBytes;
     if(scaleRatio < 1){
-        croppedImage = [UIImage compressImage:croppedImage compressRatio:scaleRatio];
+        croppedImage = [croppedImage compressWithCompressRatio:scaleRatio];
     }
     
     // 将 UIImage 转换为 PNG 格式的 NSData
