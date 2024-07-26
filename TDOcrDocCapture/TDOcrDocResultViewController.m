@@ -195,7 +195,7 @@
 
 
 -(void)retryButtonClick:(UIButton*)button{
-    [self.navigationController popViewControllerAnimated:YES];
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 -(void)continueButtonClick:(UIButton*)button{

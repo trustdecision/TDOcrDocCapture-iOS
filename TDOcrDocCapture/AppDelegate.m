@@ -16,8 +16,7 @@
 - (void)initRootVC {
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     TDOcrDocCaptureViewController * captureVC = [[TDOcrDocCaptureViewController alloc]init];
-    UINavigationController* navVC = [[UINavigationController alloc]initWithRootViewController:captureVC];
-    self.window.rootViewController = navVC;
+    self.window.rootViewController = captureVC;
     [self.window makeKeyAndVisible];
 }
 

@@ -698,7 +698,9 @@
     }
     
     TDOcrDocResultViewController* resultVC = [[TDOcrDocResultViewController alloc]initWithContentImage:croppedImage];
-    [self.navigationController pushViewController:resultVC animated:YES];
+   // [self.navigationController pushViewController:resultVC animated:YES];
+    resultVC.modalPresentationStyle = UIModalPresentationOverFullScreen;
+    [self presentViewController:resultVC animated:YES completion:nil];
     
     // 保存裁剪后的图像到相册
     [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
