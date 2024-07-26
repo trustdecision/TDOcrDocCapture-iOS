@@ -8,7 +8,6 @@
 #import "TDOcrDocCaptureViewController.h"
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
-#import "UIImage+ImageCompress.h"
 
 // UI
 #define WIDTH [UIScreen mainScreen].bounds.size.width
