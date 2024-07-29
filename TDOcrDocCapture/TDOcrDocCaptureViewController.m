@@ -46,7 +46,7 @@
 {
     CGFloat imageWidth = self.size.width*1;
     CGFloat imageHeight = self.size.height*1;
-
+    
     // calculate the size of the rotated view's containing box for our drawing space
     UIView *rotatedViewBox = [[UIView alloc] initWithFrame:CGRectMake(0,0,imageWidth, imageHeight)];
     CGAffineTransform t = CGAffineTransformMakeRotation(radians);
@@ -55,7 +55,7 @@
     
     // Create the bitmap context
     UIGraphicsBeginImageContextWithOptions(rotatedSize, NO, self.scale);
-
+    
     CGContextRef bitmap = UIGraphicsGetCurrentContext();
     
     // Move the origin to the middle of the image so we will rotate and scale around the center.
@@ -171,7 +171,7 @@
                                                  name:UIDeviceOrientationDidChangeNotification
                                                object:nil];
     
-
+    
     
     // Do any additional setup after loading the view.
 }
@@ -215,7 +215,7 @@
             // 开始 AVCaptureSession
             [self.captureSession startRunning];
         });
-
+        
         // 获取手电筒设备
         self.torchDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     }
@@ -225,18 +225,71 @@
     
 }
 
+-(void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+    NSLog(@"%s",__func__);
+}
+
+-(void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration{
+    NSLog(@"%s",__func__);
+}
+
+-(void)willAnimateFirstHalfOfRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration{
+    NSLog(@"%s",__func__);
+}
+
+-(void)willAnimateSecondHalfOfRotationFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation duration:(NSTimeInterval)duration{
+    NSLog(@"%s",__func__);
+}
+
+// 方法2：
+- (void)setInterfaceOrientation:(UIDeviceOrientation)orientation {
+    if ([[UIDevice currentDevice] respondsToSelector:@selector(setOrientation:)]) {
+        SEL selector = NSSelectorFromString(@"setOrientation:");
+        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[UIDevice
+                                                                                instanceMethodSignatureForSelector:selector]];
+        [invocation setSelector:selector];
+        [invocation setTarget:[UIDevice currentDevice]];
+        int val = orientation;
+        [invocation setArgument:&val atIndex:2];
+        [invocation invoke];
+    }
+}
+
+
 - (void)deviceOrientationDidChange:(NSNotification *)notification {
+    
     UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
+    
+    //    if(orientation == UIDeviceOrientationLandscapeLeft || orientation == UIDeviceOrientationLandscapeRight){
+    //        [self setInterfaceOrientation:UIDeviceOrientationFaceUp];
+    //        [self.view layoutIfNeeded];
+    //        [self.view layoutSubviews];
+    //        [self.view setNeedsDisplay];
+    //
+    //    }
     NSLog(@"orientation-1--::%d",orientation);
+    
+    orientation = [[UIDevice currentDevice] orientation];
+    
+    NSLog(@"orientation-2--::%d",orientation);
+    
     [self refreshUI:orientation];
     // 在这里处理方向变化
 }
+
 
 -(void)refreshUI:(UIDeviceOrientation)orientation
 {
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
     
+    CGRect applicationFrame = [[UIScreen mainScreen] applicationFrame];
+    
+    CGFloat aWidth = applicationFrame.size.width;
+    CGFloat aHeight = applicationFrame.size.height;
+    
+    NSLog(@"width--:%f,height--:%f,aWidth--:%f,aHeight--:%f",width,height,aWidth,aHeight);
     
     BOOL isPortrait = width < height;
     
@@ -251,7 +304,7 @@
     
     UIView* maskView = [[UIView alloc]init];
     [self.view addSubview:maskView];
-    maskView.backgroundColor = [UIColor clearColor];
+    maskView.backgroundColor = [UIColor greenColor];
     maskView.translatesAutoresizingMaskIntoConstraints = NO;
     
     
@@ -276,47 +329,10 @@
                                                                                               multiplier:1
                                                                                                 constant:0];
     
-    if(isPortrait){
-        NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                               attribute:NSLayoutAttributeWidth
-                                                                                               relatedBy:NSLayoutRelationEqual
-                                                                                                  toItem:maskView
-                                                                                               attribute:NSLayoutAttributeWidth
-                                                                                              multiplier:0.9
-                                                                                                constant:0];
-        
-        NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                          attribute:NSLayoutAttributeHeight
-                                                                                          relatedBy:NSLayoutRelationEqual
-                                                                                             toItem:idMaskImageView
-                                                                                          attribute:NSLayoutAttributeWidth
-                                                                                         multiplier:(2/3.0)
-                                                                                           constant:0];
-        [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
-    }else{
-        NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                               attribute:NSLayoutAttributeHeight
-                                                                                               relatedBy:NSLayoutRelationEqual
-                                                                                                  toItem:maskView
-                                                                                               attribute:NSLayoutAttributeHeight
-                                                                                              multiplier:0.9
-                                                                                                constant:0];
-        
-        NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                          attribute:NSLayoutAttributeHeight
-                                                                                          relatedBy:NSLayoutRelationEqual
-                                                                                             toItem:idMaskImageView
-                                                                                          attribute:NSLayoutAttributeWidth
-                                                                                         multiplier:(2/3.0)
-                                                                                           constant:0];
-        [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
-    }
-    
-
     
     UIView* bottomView = [[UIView alloc]init];
     [self.view addSubview:bottomView];
-    bottomView.backgroundColor = [UIColor blackColor];
+    bottomView.backgroundColor = [UIColor yellowColor];
     bottomView.translatesAutoresizingMaskIntoConstraints = NO;
     
     
@@ -395,94 +411,209 @@
     CGFloat closeButtonWH = 40;
     
     
-
+    UIImage* maskImage = nil;
     
     // 动态旋转的时候处理
     if(isPortrait){
-        UIImage* maskImage = [UIImage imageNamed:@"idmask_portrait_front"];
         
-        if(orientation == UIDeviceOrientationPortraitUpsideDown){
-            maskImage = [UIImage imageWithCGImage:maskImage.CGImage
-                                            scale:maskImage.scale
-                                      orientation:UIImageOrientationDown];
-            
-        }
+        
+        
+        
         self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
-
-        idMaskImageView.image = maskImage;
+        
         
         CGFloat buttonMargin = (WIDTH - captureButtonWH) / 4.0;
         
         
-        
-        NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                    attribute:NSLayoutAttributeTop
-                                                                                    relatedBy:NSLayoutRelationEqual
-                                                                                       toItem:self.view
-                                                                                    attribute:NSLayoutAttributeTop
-                                                                                   multiplier:1
-                                                                                     constant:0];
-        
-        NSLayoutConstraint* maskViewHeight2SuperViewHeight = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                          attribute:NSLayoutAttributeHeight
-                                                                                          relatedBy:NSLayoutRelationEqual
-                                                                                             toItem:self.view
-                                                                                          attribute:NSLayoutAttributeHeight
-                                                                                         multiplier:0.8
-                                                                                           constant:0];
-        
-        NSLayoutConstraint* maskViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                      attribute:NSLayoutAttributeLeft
-                                                                                      relatedBy:NSLayoutRelationEqual
-                                                                                         toItem:self.view
-                                                                                      attribute:NSLayoutAttributeLeft
-                                                                                     multiplier:1
-                                                                                       constant:0];
-        
-        NSLayoutConstraint* maskViewRight2SuperViewRight = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                        attribute:NSLayoutAttributeRight
-                                                                                        relatedBy:NSLayoutRelationEqual
-                                                                                           toItem:self.view
-                                                                                        attribute:NSLayoutAttributeRight
-                                                                                       multiplier:1
-                                                                                         constant:0];
-        [self.view addConstraints:@[maskViewTop2SuperViewTop,maskViewHeight2SuperViewHeight,maskViewLeft2SuperViewLeft,maskViewRight2SuperViewRight]];
-        
-        
-        NSLayoutConstraint* bottomViewTop2MaskViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
+        if(orientation == UIDeviceOrientationLandscapeLeft){
+            
+            maskImage = [UIImage imageNamed:@"idmask_landscape_front"];
+            
+            
+            idMaskImageView.image = maskImage;
+            
+            NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                                   attribute:NSLayoutAttributeHeight
+                                                                                                   relatedBy:NSLayoutRelationEqual
+                                                                                                      toItem:maskView
+                                                                                                   attribute:NSLayoutAttributeHeight
+                                                                                                  multiplier:0.9
+                                                                                                    constant:0];
+            
+            NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                              attribute:NSLayoutAttributeHeight
+                                                                                              relatedBy:NSLayoutRelationEqual
+                                                                                                 toItem:idMaskImageView
+                                                                                              attribute:NSLayoutAttributeWidth
+                                                                                             multiplier:(2/3.0)
+                                                                                               constant:0];
+            [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
+            
+            NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
                                                                                         attribute:NSLayoutAttributeTop
                                                                                         relatedBy:NSLayoutRelationEqual
-                                                                                           toItem:maskView
-                                                                                        attribute:NSLayoutAttributeBottom
-                                                                                       multiplier:1
-                                                                                         constant:0];
-        
-        NSLayoutConstraint* bottomViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                        attribute:NSLayoutAttributeLeft
-                                                                                        relatedBy:NSLayoutRelationEqual
                                                                                            toItem:self.view
-                                                                                        attribute:NSLayoutAttributeLeft
+                                                                                        attribute:NSLayoutAttributeTop
                                                                                        multiplier:1
                                                                                          constant:0];
-        
-        NSLayoutConstraint* bottomViewRight2SuperViewRight = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                          attribute:NSLayoutAttributeRight
+            
+            NSLayoutConstraint* maskViewHeight2SuperViewBottom = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                              attribute:NSLayoutAttributeBottom
+                                                                                              relatedBy:NSLayoutRelationEqual
+                                                                                                 toItem:self.view
+                                                                                              attribute:NSLayoutAttributeBottom
+                                                                                             multiplier:1
+                                                                                               constant:0];
+            
+            NSLayoutConstraint* maskViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                          attribute:NSLayoutAttributeLeft
                                                                                           relatedBy:NSLayoutRelationEqual
                                                                                              toItem:self.view
+                                                                                          attribute:NSLayoutAttributeLeft
+                                                                                         multiplier:1
+                                                                                           constant:0];
+            
+            NSLayoutConstraint* maskViewRight2SuperViewWidth = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                            attribute:NSLayoutAttributeWidth
+                                                                                            relatedBy:NSLayoutRelationEqual
+                                                                                               toItem:self.view
+                                                                                            attribute:NSLayoutAttributeWidth
+                                                                                           multiplier:0.8
+                                                                                             constant:0];
+            [self.view addConstraints:@[maskViewTop2SuperViewTop,maskViewHeight2SuperViewBottom,maskViewLeft2SuperViewLeft,maskViewRight2SuperViewWidth]];
+            
+            
+            NSLayoutConstraint* bottomViewTop2MaskViewLeft = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                          attribute:NSLayoutAttributeLeft
+                                                                                          relatedBy:NSLayoutRelationEqual
+                                                                                             toItem:maskView
                                                                                           attribute:NSLayoutAttributeRight
                                                                                          multiplier:1
                                                                                            constant:0];
-        
-        NSLayoutConstraint* bottomViewBottom2SuperViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                            attribute:NSLayoutAttributeBottom
+            
+            NSLayoutConstraint* bottomViewLeft2SuperViewRight = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                             attribute:NSLayoutAttributeRight
+                                                                                             relatedBy:NSLayoutRelationEqual
+                                                                                                toItem:self.view
+                                                                                             attribute:NSLayoutAttributeRight
+                                                                                            multiplier:1
+                                                                                              constant:0];
+            
+            NSLayoutConstraint* bottomViewRight2SuperViewTop = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                            attribute:NSLayoutAttributeTop
                                                                                             relatedBy:NSLayoutRelationEqual
                                                                                                toItem:self.view
+                                                                                            attribute:NSLayoutAttributeTop
+                                                                                           multiplier:1
+                                                                                             constant:0];
+            
+            NSLayoutConstraint* bottomViewBottom2SuperViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                                attribute:NSLayoutAttributeBottom
+                                                                                                relatedBy:NSLayoutRelationEqual
+                                                                                                   toItem:self.view
+                                                                                                attribute:NSLayoutAttributeBottom
+                                                                                               multiplier:1
+                                                                                                 constant:0];
+            
+            [self.view addConstraints:@[bottomViewTop2MaskViewLeft,bottomViewLeft2SuperViewRight,bottomViewRight2SuperViewTop,bottomViewBottom2SuperViewBottom]];
+        }else{
+            maskImage = [UIImage imageNamed:@"idmask_portrait_front"];
+            
+            if(orientation == UIDeviceOrientationPortraitUpsideDown){
+                maskImage = [UIImage imageWithCGImage:maskImage.CGImage
+                                                scale:maskImage.scale
+                                          orientation:UIImageOrientationDown];
+                
+            }
+            
+            idMaskImageView.image = maskImage;
+            
+            
+            NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                                   attribute:NSLayoutAttributeWidth
+                                                                                                   relatedBy:NSLayoutRelationEqual
+                                                                                                      toItem:maskView
+                                                                                                   attribute:NSLayoutAttributeWidth
+                                                                                                  multiplier:0.9
+                                                                                                    constant:0];
+            
+            NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                              attribute:NSLayoutAttributeHeight
+                                                                                              relatedBy:NSLayoutRelationEqual
+                                                                                                 toItem:idMaskImageView
+                                                                                              attribute:NSLayoutAttributeWidth
+                                                                                             multiplier:(2/3.0)
+                                                                                               constant:0];
+            [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
+            
+            NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                        attribute:NSLayoutAttributeTop
+                                                                                        relatedBy:NSLayoutRelationEqual
+                                                                                           toItem:self.view
+                                                                                        attribute:NSLayoutAttributeTop
+                                                                                       multiplier:1
+                                                                                         constant:0];
+            
+            NSLayoutConstraint* maskViewHeight2SuperViewHeight = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                              attribute:NSLayoutAttributeHeight
+                                                                                              relatedBy:NSLayoutRelationEqual
+                                                                                                 toItem:self.view
+                                                                                              attribute:NSLayoutAttributeHeight
+                                                                                             multiplier:0.8
+                                                                                               constant:0];
+            
+            NSLayoutConstraint* maskViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                          attribute:NSLayoutAttributeLeft
+                                                                                          relatedBy:NSLayoutRelationEqual
+                                                                                             toItem:self.view
+                                                                                          attribute:NSLayoutAttributeLeft
+                                                                                         multiplier:1
+                                                                                           constant:0];
+            
+            NSLayoutConstraint* maskViewRight2SuperViewRight = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                            attribute:NSLayoutAttributeRight
+                                                                                            relatedBy:NSLayoutRelationEqual
+                                                                                               toItem:self.view
+                                                                                            attribute:NSLayoutAttributeRight
+                                                                                           multiplier:1
+                                                                                             constant:0];
+            [self.view addConstraints:@[maskViewTop2SuperViewTop,maskViewHeight2SuperViewHeight,maskViewLeft2SuperViewLeft,maskViewRight2SuperViewRight]];
+            
+            
+            NSLayoutConstraint* bottomViewTop2MaskViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                            attribute:NSLayoutAttributeTop
+                                                                                            relatedBy:NSLayoutRelationEqual
+                                                                                               toItem:maskView
                                                                                             attribute:NSLayoutAttributeBottom
                                                                                            multiplier:1
                                                                                              constant:0];
-        
-        [self.view addConstraints:@[bottomViewTop2MaskViewBottom,bottomViewLeft2SuperViewLeft,bottomViewRight2SuperViewRight,bottomViewBottom2SuperViewBottom]];
-        
+            
+            NSLayoutConstraint* bottomViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                            attribute:NSLayoutAttributeLeft
+                                                                                            relatedBy:NSLayoutRelationEqual
+                                                                                               toItem:self.view
+                                                                                            attribute:NSLayoutAttributeLeft
+                                                                                           multiplier:1
+                                                                                             constant:0];
+            
+            NSLayoutConstraint* bottomViewRight2SuperViewRight = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                              attribute:NSLayoutAttributeRight
+                                                                                              relatedBy:NSLayoutRelationEqual
+                                                                                                 toItem:self.view
+                                                                                              attribute:NSLayoutAttributeRight
+                                                                                             multiplier:1
+                                                                                               constant:0];
+            
+            NSLayoutConstraint* bottomViewBottom2SuperViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                                attribute:NSLayoutAttributeBottom
+                                                                                                relatedBy:NSLayoutRelationEqual
+                                                                                                   toItem:self.view
+                                                                                                attribute:NSLayoutAttributeBottom
+                                                                                               multiplier:1
+                                                                                                 constant:0];
+            
+            [self.view addConstraints:@[bottomViewTop2MaskViewBottom,bottomViewLeft2SuperViewLeft,bottomViewRight2SuperViewRight,bottomViewBottom2SuperViewBottom]];
+        }
         
         NSLayoutConstraint* flashButtonRight2CaptureButtonLeft = [NSLayoutConstraint constraintWithItem:flashButton
                                                                                               attribute:NSLayoutAttributeRight
@@ -559,7 +690,27 @@
         
     }else{
         
-        idMaskImageView.image = [UIImage imageNamed:@"idmask_landscape_front"];
+        NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                               attribute:NSLayoutAttributeHeight
+                                                                                               relatedBy:NSLayoutRelationEqual
+                                                                                                  toItem:maskView
+                                                                                               attribute:NSLayoutAttributeHeight
+                                                                                              multiplier:0.9
+                                                                                                constant:0];
+        
+        NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                          attribute:NSLayoutAttributeHeight
+                                                                                          relatedBy:NSLayoutRelationEqual
+                                                                                             toItem:idMaskImageView
+                                                                                          attribute:NSLayoutAttributeWidth
+                                                                                         multiplier:(2/3.0)
+                                                                                           constant:0];
+        [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
+        
+        maskImage = [UIImage imageNamed:@"idmask_landscape_front"];
+        
+        
+        idMaskImageView.image = maskImage;
         
         CGFloat buttonMargin = (HEIGHT - captureButtonWH) / 4.0;
         
@@ -807,22 +958,22 @@
     
     CGFloat viewW = self.view.bounds.size.width;
     CGFloat viewH = self.view.bounds.size.height;
-
+    
     CGFloat imageW = originalImage.size.width;
     CGFloat imageH = originalImage.size.height;
-
+    
     // 计算比率
     CGFloat XRatio = cropX / viewW;
     CGFloat YRatio = cropY / viewH;
     CGFloat WRatio = cropW / viewW;
     CGFloat HRatio = cropH / viewH;
-
+    
     
     NSLog(@"cropRect2--::x:%f,y:%f,w:%f,h:%f",cropRect2.origin.x,cropRect2.origin.y,cropRect2.size.width,cropRect2.size.height);
     CGRect cropRect3 = CGRectMake(XRatio * imageW, YRatio * imageH, WRatio * imageW, HRatio * imageH);
-
+    
     NSLog(@"cropRect3--::x:%f,y:%f,w:%f,h:%f",cropRect3.origin.x,cropRect3.origin.y,cropRect3.size.width,cropRect3.size.height);
-
+    
     
     // 根据裁剪区域创建CGImageRef
     CGImageRef imageRef = CGImageCreateWithImageInRect(originalImage.CGImage, cropRect3);
@@ -833,7 +984,7 @@
     // 释放CGImageRef
     CGImageRelease(imageRef);
     
-
+    
     UIImageOrientation imageOrientation = croppedImage.imageOrientation;
     NSLog(@"croppedImage-1---::%d",imageOrientation);
     
@@ -844,10 +995,10 @@
     
     // 将 UIImage 转换为 PNG 格式的 NSData
     NSData *croppedImageData = UIImagePNGRepresentation(croppedImage);
-
+    
     // 获取 PNG 图片占用的字节数
     NSUInteger croppedImageSizeInBytes = croppedImageData.length;
-
+    
     NSLog(@"croppedImage--1 图片占用 %lu 字节", (unsigned long)croppedImageSizeInBytes);
     
     CGFloat scaleRatio =   TARGET_IMAGE_KB*1024.0 / croppedImageSizeInBytes;
@@ -857,14 +1008,14 @@
     
     // 将 UIImage 转换为 PNG 格式的 NSData
     croppedImageData = UIImagePNGRepresentation(croppedImage);
-
+    
     // 获取 PNG 图片占用的字节数
     croppedImageSizeInBytes = croppedImageData.length;
-
+    
     NSLog(@"croppedImage--2 图片占用 %lu 字节", (unsigned long)croppedImageSizeInBytes);
     
     TDOcrDocResultViewController* resultVC = [[TDOcrDocResultViewController alloc]initWithContentImage:croppedImage];
-   // [self.navigationController pushViewController:resultVC animated:YES];
+    // [self.navigationController pushViewController:resultVC animated:YES];
     resultVC.modalPresentationStyle = UIModalPresentationOverFullScreen;
     [self presentViewController:resultVC animated:YES completion:nil];
     // 保存裁剪后的图像到相册
@@ -917,13 +1068,13 @@
     
     UIGraphicsEndImageContext();
     
-   // if(width > height){
-        if(self.capturedOrientation == UIDeviceOrientationLandscapeLeft){
-            pngImage = [pngImage imageRotatedByDegrees:-90];
-        }else if(self.capturedOrientation == UIDeviceOrientationLandscapeRight){
-            pngImage = [pngImage imageRotatedByDegrees:90];
-        }
-   // }
+    // if(width > height){
+    if(self.capturedOrientation == UIDeviceOrientationLandscapeLeft){
+        pngImage = [pngImage imageRotatedByDegrees:-90];
+    }else if(self.capturedOrientation == UIDeviceOrientationLandscapeRight){
+        pngImage = [pngImage imageRotatedByDegrees:90];
+    }
+    // }
     
     [self cropImageAndSaveToPhotosAlbum:pngImage];
     
