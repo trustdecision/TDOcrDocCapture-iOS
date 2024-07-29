@@ -9,9 +9,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef void (^CompletionBlock)(void);
+
 @interface TDOcrDocResultViewController : UIViewController
 
--(instancetype)initWithContentImage:(UIImage*)contentImage;
+-(instancetype)initWithContentImage:(UIImage*)contentImage Completion:(CompletionBlock)completionBlock;
 
 @end
 

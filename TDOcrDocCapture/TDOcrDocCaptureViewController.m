@@ -158,10 +158,12 @@
 
 -(void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];
+
     UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
-    NSLog(@"orientation-0--::%d",orientation);
     [self refreshUI:orientation];
 }
+
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     
@@ -225,22 +227,6 @@
     
 }
 
--(void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
-{
-    NSLog(@"%s",__func__);
-}
-
--(void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration{
-    NSLog(@"%s",__func__);
-}
-
--(void)willAnimateFirstHalfOfRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration{
-    NSLog(@"%s",__func__);
-}
-
--(void)willAnimateSecondHalfOfRotationFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation duration:(NSTimeInterval)duration{
-    NSLog(@"%s",__func__);
-}
 
 // 方法2：
 - (void)setInterfaceOrientation:(UIDeviceOrientation)orientation {
@@ -258,21 +244,9 @@
 
 
 - (void)deviceOrientationDidChange:(NSNotification *)notification {
-    
     UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
-    
-    //    if(orientation == UIDeviceOrientationLandscapeLeft || orientation == UIDeviceOrientationLandscapeRight){
-    //        [self setInterfaceOrientation:UIDeviceOrientationFaceUp];
-    //        [self.view layoutIfNeeded];
-    //        [self.view layoutSubviews];
-    //        [self.view setNeedsDisplay];
-    //
-    //    }
-    NSLog(@"orientation-1--::%d",orientation);
-    
     orientation = [[UIDevice currentDevice] orientation];
     
-    NSLog(@"orientation-2--::%d",orientation);
     
     [self refreshUI:orientation];
     // 在这里处理方向变化
@@ -284,14 +258,67 @@
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
     
-    CGRect applicationFrame = [[UIScreen mainScreen] applicationFrame];
-    
-    CGFloat aWidth = applicationFrame.size.width;
-    CGFloat aHeight = applicationFrame.size.height;
-    
-    NSLog(@"width--:%f,height--:%f,aWidth--:%f,aHeight--:%f",width,height,aWidth,aHeight);
-    
+
     BOOL isPortrait = width < height;
+    
+    if(orientation == UIDeviceOrientationLandscapeLeft || orientation == UIDeviceOrientationLandscapeRight){
+        isPortrait = NO;
+        if(width < height){
+            self.previewLayer.frame = CGRectMake(0, 0, height, width);
+        }else{
+            self.previewLayer.frame = self.view.bounds;
+        }
+    }else if(orientation == UIDeviceOrientationPortrait){
+        isPortrait = YES;
+        if(width > height){
+            self.previewLayer.frame = CGRectMake(0, 0, height, width);
+        }else{
+            self.previewLayer.frame = self.view.bounds;
+            
+        }
+    }else if(orientation == UIDeviceOrientationPortraitUpsideDown){
+        
+        if(width < height){
+            isPortrait = YES;
+        }else{
+            isPortrait = NO;
+        }
+        self.previewLayer.frame =  self.view.bounds;
+
+    }
+    
+    
+    [self refreshWithIsPortrait:isPortrait];
+    
+    
+    
+    if(orientation == UIDeviceOrientationLandscapeRight){
+        // 设置预览图层的方向为横屏
+        self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
+        
+    }else if(orientation == UIDeviceOrientationLandscapeLeft){
+        self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
+        
+    }else if(orientation == UIDeviceOrientationPortrait){
+        self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
+    }
+    else if(orientation == UIDeviceOrientationPortraitUpsideDown){
+      //  self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortraitUpsideDown;
+        if(width < height){
+            self.idMaskImageView.image = [UIImage imageWithCGImage:self.idMaskImageView.image.CGImage
+                                                             scale:self.idMaskImageView.image.scale
+                                                       orientation:UIImageOrientationDown];
+        }
+        
+    }else{
+        
+    }
+    
+}
+
+-(void)refreshWithIsPortrait:(BOOL)isPortrait{
+    
+    
     
     [self.view.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         [obj removeFromSuperview];
@@ -329,9 +356,12 @@
                                                                                                 constant:0];
     
     
+    
+    
+    
     UIView* bottomView = [[UIView alloc]init];
     [self.view addSubview:bottomView];
-    bottomView.backgroundColor = [UIColor clearColor];
+    bottomView.backgroundColor = [UIColor blackColor];
     bottomView.translatesAutoresizingMaskIntoConstraints = NO;
     
     
@@ -410,372 +440,177 @@
     CGFloat closeButtonWH = 40;
     
     
-    UIImage* maskImage = nil;
+    
     
     // 动态旋转的时候处理
     if(isPortrait){
         
+        NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                               attribute:NSLayoutAttributeWidth
+                                                                                               relatedBy:NSLayoutRelationEqual
+                                                                                                  toItem:maskView
+                                                                                               attribute:NSLayoutAttributeWidth
+                                                                                              multiplier:0.9
+                                                                                                constant:0];
         
+        NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
+                                                                                          attribute:NSLayoutAttributeHeight
+                                                                                          relatedBy:NSLayoutRelationEqual
+                                                                                             toItem:idMaskImageView
+                                                                                          attribute:NSLayoutAttributeWidth
+                                                                                         multiplier:(2/3.0)
+                                                                                           constant:0];
+        [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
         
+        idMaskImageView.image = [UIImage imageNamed:@"idmask_portrait_front"];
         
         self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
         
         
-        CGFloat buttonMargin = (WIDTH - captureButtonWH) / 4.0;
+        CGFloat buttonMargin = (MIN(WIDTH,HEIGHT) - captureButtonWH) / 4.0;
         
         
-        if(orientation == UIDeviceOrientationLandscapeLeft){
-            
-            self.previewLayer.frame = CGRectMake(0, 0, self.view.bounds.size.height, self.view.bounds.size.width);
-
-            
-            NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                                   attribute:NSLayoutAttributeHeight
-                                                                                                   relatedBy:NSLayoutRelationEqual
-                                                                                                      toItem:maskView
-                                                                                                   attribute:NSLayoutAttributeHeight
-                                                                                                  multiplier:0.9
-                                                                                                    constant:0];
-            
-            NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                              attribute:NSLayoutAttributeHeight
-                                                                                              relatedBy:NSLayoutRelationEqual
-                                                                                                 toItem:idMaskImageView
-                                                                                              attribute:NSLayoutAttributeWidth
-                                                                                             multiplier:(2/3.0)
-                                                                                               constant:0];
-            [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
-            
-            maskImage = [UIImage imageNamed:@"idmask_landscape_front"];
-            
-            
-            idMaskImageView.image = maskImage;
-            
-            CGFloat buttonMargin = (WIDTH - captureButtonWH) / 4.0;
-            
-            if(orientation == UIDeviceOrientationLandscapeRight){
-                // 设置预览图层的方向为横屏
-                self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
-            }else{
-                self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
-            }
-            
-            NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                        attribute:NSLayoutAttributeTop
+        
+        NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                    attribute:NSLayoutAttributeTop
+                                                                                    relatedBy:NSLayoutRelationEqual
+                                                                                       toItem:self.view
+                                                                                    attribute:NSLayoutAttributeTop
+                                                                                   multiplier:1
+                                                                                     constant:0];
+        
+        NSLayoutConstraint* maskViewHeight2SuperViewHeight = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                          attribute:NSLayoutAttributeHeight
+                                                                                          relatedBy:NSLayoutRelationEqual
+                                                                                             toItem:self.view
+                                                                                          attribute:NSLayoutAttributeHeight
+                                                                                         multiplier:0.8
+                                                                                           constant:0];
+        
+        NSLayoutConstraint* maskViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                      attribute:NSLayoutAttributeLeft
+                                                                                      relatedBy:NSLayoutRelationEqual
+                                                                                         toItem:self.view
+                                                                                      attribute:NSLayoutAttributeLeft
+                                                                                     multiplier:1
+                                                                                       constant:0];
+        
+        NSLayoutConstraint* maskViewRight2SuperViewRight = [NSLayoutConstraint constraintWithItem:maskView
+                                                                                        attribute:NSLayoutAttributeRight
                                                                                         relatedBy:NSLayoutRelationEqual
                                                                                            toItem:self.view
-                                                                                        attribute:NSLayoutAttributeTop
+                                                                                        attribute:NSLayoutAttributeRight
                                                                                        multiplier:1
                                                                                          constant:0];
-            
-            NSLayoutConstraint* maskViewBottom2SuperViewBottom = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                              attribute:NSLayoutAttributeBottom
-                                                                                              relatedBy:NSLayoutRelationEqual
-                                                                                                 toItem:self.view
-                                                                                              attribute:NSLayoutAttributeBottom
-                                                                                             multiplier:1
-                                                                                               constant:0];
-            
-            NSLayoutConstraint* maskViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                          attribute:NSLayoutAttributeLeft
-                                                                                          relatedBy:NSLayoutRelationEqual
-                                                                                             toItem:self.view
-                                                                                          attribute:NSLayoutAttributeLeft
-                                                                                         multiplier:1
-                                                                                           constant:0];
-            
-            NSLayoutConstraint* maskViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                            attribute:NSLayoutAttributeWidth
-                                                                                            relatedBy:NSLayoutRelationEqual
-                                                                                               toItem:self.view
-                                                                                            attribute:NSLayoutAttributeWidth
-                                                                                           multiplier:0.8
-                                                                                             constant:0];
-            [self.view addConstraints:@[maskViewTop2SuperViewTop,maskViewBottom2SuperViewBottom,maskViewLeft2SuperViewLeft,maskViewWidth2SuperViewWidth]];
-            
-            
-            NSLayoutConstraint* bottomViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                          attribute:NSLayoutAttributeTop
-                                                                                          relatedBy:NSLayoutRelationEqual
-                                                                                             toItem:self.view
-                                                                                          attribute:NSLayoutAttributeTop
-                                                                                         multiplier:1
-                                                                                           constant:0];
-            
-            NSLayoutConstraint* bottomViewBottom2SuperViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                                attribute:NSLayoutAttributeBottom
-                                                                                                relatedBy:NSLayoutRelationEqual
-                                                                                                   toItem:self.view
-                                                                                                attribute:NSLayoutAttributeBottom
-                                                                                               multiplier:1
-                                                                                                 constant:0];
-            
-            
-            NSLayoutConstraint* bottomViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                            attribute:NSLayoutAttributeLeft
-                                                                                            relatedBy:NSLayoutRelationEqual
-                                                                                               toItem:maskView
-                                                                                            attribute:NSLayoutAttributeRight
-                                                                                           multiplier:1
-                                                                                             constant:0];
-            
-            NSLayoutConstraint* bottomViewRight2SuperViewRight = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                              attribute:NSLayoutAttributeRight
-                                                                                              relatedBy:NSLayoutRelationEqual
-                                                                                                 toItem:self.view
-                                                                                              attribute:NSLayoutAttributeRight
-                                                                                             multiplier:1
-                                                                                               constant:0];
-            
-            
-            [self.view addConstraints:@[bottomViewTop2SuperViewTop,bottomViewLeft2SuperViewLeft,bottomViewRight2SuperViewRight,bottomViewBottom2SuperViewBottom]];
-            
-            
-            
-            NSLayoutConstraint* flashButtonTop2CaptureButtonBottom = [NSLayoutConstraint constraintWithItem:flashButton
-                                                                                                  attribute:NSLayoutAttributeTop
-                                                                                                  relatedBy:NSLayoutRelationEqual
-                                                                                                     toItem:captureButton
-                                                                                                  attribute:NSLayoutAttributeBottom
-                                                                                                 multiplier:1
-                                                                                                   constant:buttonMargin];
-            
-            NSLayoutConstraint* flashButtonCenterY2SuperViewCenterX = [NSLayoutConstraint constraintWithItem:flashButton
-                                                                                                   attribute:NSLayoutAttributeCenterX
-                                                                                                   relatedBy:NSLayoutRelationEqual
-                                                                                                      toItem:bottomView
-                                                                                                   attribute:NSLayoutAttributeCenterX
-                                                                                                  multiplier:1
-                                                                                                    constant:0];
-            
-            NSLayoutConstraint* flashButtonWidth = [NSLayoutConstraint constraintWithItem:flashButton
-                                                                                attribute:NSLayoutAttributeWidth
-                                                                                relatedBy:NSLayoutRelationEqual
-                                                                                   toItem:nil
-                                                                                attribute:NSLayoutAttributeWidth
-                                                                               multiplier:1.0
-                                                                                 constant:flashButtonWH];
-            
-            NSLayoutConstraint* flashButtonHeight = [NSLayoutConstraint constraintWithItem:flashButton
-                                                                                 attribute:NSLayoutAttributeHeight
-                                                                                 relatedBy:NSLayoutRelationEqual
-                                                                                    toItem:nil
-                                                                                 attribute:NSLayoutAttributeHeight
-                                                                                multiplier:1.0
-                                                                                  constant:flashButtonWH];
-            
-            [bottomView addConstraints:@[flashButtonTop2CaptureButtonBottom,flashButtonCenterY2SuperViewCenterX,flashButtonWidth,flashButtonHeight]];
-            
-            
-            
-            
-            NSLayoutConstraint* closeButtonBottom2CaptureButtonTop = [NSLayoutConstraint constraintWithItem:closeButton
-                                                                                                  attribute:NSLayoutAttributeBottom
-                                                                                                  relatedBy:NSLayoutRelationEqual
-                                                                                                     toItem:captureButton
-                                                                                                  attribute:NSLayoutAttributeTop
-                                                                                                 multiplier:1
-                                                                                                   constant:-buttonMargin];
-            
-            NSLayoutConstraint* closeButtonCenterY2SuperViewCenterX = [NSLayoutConstraint constraintWithItem:closeButton
-                                                                                                   attribute:NSLayoutAttributeCenterX
-                                                                                                   relatedBy:NSLayoutRelationEqual
-                                                                                                      toItem:bottomView
-                                                                                                   attribute:NSLayoutAttributeCenterX
-                                                                                                  multiplier:1
-                                                                                                    constant:0];
-            
-            NSLayoutConstraint* closeButtonWidth = [NSLayoutConstraint constraintWithItem:closeButton
-                                                                                attribute:NSLayoutAttributeWidth
-                                                                                relatedBy:NSLayoutRelationEqual
-                                                                                   toItem:nil
-                                                                                attribute:NSLayoutAttributeWidth
-                                                                               multiplier:1.0
-                                                                                 constant:closeButtonWH];
-            
-            NSLayoutConstraint* closeButtonHeight = [NSLayoutConstraint constraintWithItem:closeButton
-                                                                                 attribute:NSLayoutAttributeHeight
-                                                                                 relatedBy:NSLayoutRelationEqual
-                                                                                    toItem:nil
-                                                                                 attribute:NSLayoutAttributeHeight
-                                                                                multiplier:1.0
-                                                                                  constant:closeButtonWH];
-            
-            [bottomView addConstraints:@[closeButtonBottom2CaptureButtonTop,closeButtonCenterY2SuperViewCenterX,closeButtonWidth,closeButtonHeight]];
-            
-        }else{
-            maskImage = [UIImage imageNamed:@"idmask_portrait_front"];
-            
-            if(orientation == UIDeviceOrientationPortraitUpsideDown){
-                maskImage = [UIImage imageWithCGImage:maskImage.CGImage
-                                                scale:maskImage.scale
-                                          orientation:UIImageOrientationDown];
-                
-            }
-            
-            idMaskImageView.image = maskImage;
-            
-            
-            NSLayoutConstraint* idMaskImageViewWidth2SuperViewWidth = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                                   attribute:NSLayoutAttributeWidth
-                                                                                                   relatedBy:NSLayoutRelationEqual
-                                                                                                      toItem:maskView
-                                                                                                   attribute:NSLayoutAttributeWidth
-                                                                                                  multiplier:0.9
-                                                                                                    constant:0];
-            
-            NSLayoutConstraint* idMaskImageViewWithHeightRatio = [NSLayoutConstraint constraintWithItem:idMaskImageView
-                                                                                              attribute:NSLayoutAttributeHeight
-                                                                                              relatedBy:NSLayoutRelationEqual
-                                                                                                 toItem:idMaskImageView
-                                                                                              attribute:NSLayoutAttributeWidth
-                                                                                             multiplier:(2/3.0)
-                                                                                               constant:0];
-            [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
-            
-            NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
+        [self.view addConstraints:@[maskViewTop2SuperViewTop,maskViewHeight2SuperViewHeight,maskViewLeft2SuperViewLeft,maskViewRight2SuperViewRight]];
+        
+        
+        NSLayoutConstraint* bottomViewTop2MaskViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
                                                                                         attribute:NSLayoutAttributeTop
                                                                                         relatedBy:NSLayoutRelationEqual
-                                                                                           toItem:self.view
-                                                                                        attribute:NSLayoutAttributeTop
+                                                                                           toItem:maskView
+                                                                                        attribute:NSLayoutAttributeBottom
                                                                                        multiplier:1
                                                                                          constant:0];
-            
-            NSLayoutConstraint* maskViewHeight2SuperViewHeight = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                              attribute:NSLayoutAttributeHeight
-                                                                                              relatedBy:NSLayoutRelationEqual
-                                                                                                 toItem:self.view
-                                                                                              attribute:NSLayoutAttributeHeight
-                                                                                             multiplier:0.8
-                                                                                               constant:0];
-            
-            NSLayoutConstraint* maskViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                          attribute:NSLayoutAttributeLeft
+        
+        NSLayoutConstraint* bottomViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                        attribute:NSLayoutAttributeLeft
+                                                                                        relatedBy:NSLayoutRelationEqual
+                                                                                           toItem:self.view
+                                                                                        attribute:NSLayoutAttributeLeft
+                                                                                       multiplier:1
+                                                                                         constant:0];
+        
+        NSLayoutConstraint* bottomViewRight2SuperViewRight = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                          attribute:NSLayoutAttributeRight
                                                                                           relatedBy:NSLayoutRelationEqual
                                                                                              toItem:self.view
-                                                                                          attribute:NSLayoutAttributeLeft
+                                                                                          attribute:NSLayoutAttributeRight
                                                                                          multiplier:1
                                                                                            constant:0];
-            
-            NSLayoutConstraint* maskViewRight2SuperViewRight = [NSLayoutConstraint constraintWithItem:maskView
-                                                                                            attribute:NSLayoutAttributeRight
+        
+        NSLayoutConstraint* bottomViewBottom2SuperViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
+                                                                                            attribute:NSLayoutAttributeBottom
                                                                                             relatedBy:NSLayoutRelationEqual
                                                                                                toItem:self.view
-                                                                                            attribute:NSLayoutAttributeRight
-                                                                                           multiplier:1
-                                                                                             constant:0];
-            [self.view addConstraints:@[maskViewTop2SuperViewTop,maskViewHeight2SuperViewHeight,maskViewLeft2SuperViewLeft,maskViewRight2SuperViewRight]];
-            
-            
-            NSLayoutConstraint* bottomViewTop2MaskViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                            attribute:NSLayoutAttributeTop
-                                                                                            relatedBy:NSLayoutRelationEqual
-                                                                                               toItem:maskView
                                                                                             attribute:NSLayoutAttributeBottom
                                                                                            multiplier:1
                                                                                              constant:0];
-            
-            NSLayoutConstraint* bottomViewLeft2SuperViewLeft = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                            attribute:NSLayoutAttributeLeft
-                                                                                            relatedBy:NSLayoutRelationEqual
-                                                                                               toItem:self.view
-                                                                                            attribute:NSLayoutAttributeLeft
-                                                                                           multiplier:1
-                                                                                             constant:0];
-            
-            NSLayoutConstraint* bottomViewRight2SuperViewRight = [NSLayoutConstraint constraintWithItem:bottomView
+        
+        [self.view addConstraints:@[bottomViewTop2MaskViewBottom,bottomViewLeft2SuperViewLeft,bottomViewRight2SuperViewRight,bottomViewBottom2SuperViewBottom]];
+        
+        
+        NSLayoutConstraint* flashButtonRight2CaptureButtonLeft = [NSLayoutConstraint constraintWithItem:flashButton
                                                                                               attribute:NSLayoutAttributeRight
                                                                                               relatedBy:NSLayoutRelationEqual
-                                                                                                 toItem:self.view
+                                                                                                 toItem:captureButton
+                                                                                              attribute:NSLayoutAttributeLeft
+                                                                                             multiplier:1
+                                                                                               constant:-buttonMargin];
+        
+        NSLayoutConstraint* flashButtonCenterY2SuperViewCenterY = [NSLayoutConstraint constraintWithItem:flashButton
+                                                                                               attribute:NSLayoutAttributeCenterY
+                                                                                               relatedBy:NSLayoutRelationEqual
+                                                                                                  toItem:bottomView
+                                                                                               attribute:NSLayoutAttributeCenterY
+                                                                                              multiplier:1
+                                                                                                constant:0];
+        
+        NSLayoutConstraint* flashButtonWidth = [NSLayoutConstraint constraintWithItem:flashButton
+                                                                            attribute:NSLayoutAttributeWidth
+                                                                            relatedBy:NSLayoutRelationEqual
+                                                                               toItem:nil
+                                                                            attribute:NSLayoutAttributeWidth
+                                                                           multiplier:1.0
+                                                                             constant:flashButtonWH];
+        
+        NSLayoutConstraint* flashButtonHeight = [NSLayoutConstraint constraintWithItem:flashButton
+                                                                             attribute:NSLayoutAttributeHeight
+                                                                             relatedBy:NSLayoutRelationEqual
+                                                                                toItem:nil
+                                                                             attribute:NSLayoutAttributeHeight
+                                                                            multiplier:1.0
+                                                                              constant:flashButtonWH];
+        
+        [bottomView addConstraints:@[flashButtonRight2CaptureButtonLeft,flashButtonCenterY2SuperViewCenterY,flashButtonWidth,flashButtonHeight]];
+        
+        
+        
+        
+        NSLayoutConstraint* closeButtonLeft2CaptureButtonRight = [NSLayoutConstraint constraintWithItem:closeButton
+                                                                                              attribute:NSLayoutAttributeLeft
+                                                                                              relatedBy:NSLayoutRelationEqual
+                                                                                                 toItem:captureButton
                                                                                               attribute:NSLayoutAttributeRight
                                                                                              multiplier:1
-                                                                                               constant:0];
-            
-            NSLayoutConstraint* bottomViewBottom2SuperViewBottom = [NSLayoutConstraint constraintWithItem:bottomView
-                                                                                                attribute:NSLayoutAttributeBottom
-                                                                                                relatedBy:NSLayoutRelationEqual
-                                                                                                   toItem:self.view
-                                                                                                attribute:NSLayoutAttributeBottom
-                                                                                               multiplier:1
-                                                                                                 constant:0];
-            
-            [self.view addConstraints:@[bottomViewTop2MaskViewBottom,bottomViewLeft2SuperViewLeft,bottomViewRight2SuperViewRight,bottomViewBottom2SuperViewBottom]];
-            
-            NSLayoutConstraint* flashButtonRight2CaptureButtonLeft = [NSLayoutConstraint constraintWithItem:flashButton
-                                                                                                  attribute:NSLayoutAttributeRight
-                                                                                                  relatedBy:NSLayoutRelationEqual
-                                                                                                     toItem:captureButton
-                                                                                                  attribute:NSLayoutAttributeLeft
-                                                                                                 multiplier:1
-                                                                                                   constant:-buttonMargin];
-            
-            NSLayoutConstraint* flashButtonCenterY2SuperViewCenterY = [NSLayoutConstraint constraintWithItem:flashButton
-                                                                                                   attribute:NSLayoutAttributeCenterY
-                                                                                                   relatedBy:NSLayoutRelationEqual
-                                                                                                      toItem:bottomView
-                                                                                                   attribute:NSLayoutAttributeCenterY
-                                                                                                  multiplier:1
-                                                                                                    constant:0];
-            
-            NSLayoutConstraint* flashButtonWidth = [NSLayoutConstraint constraintWithItem:flashButton
-                                                                                attribute:NSLayoutAttributeWidth
-                                                                                relatedBy:NSLayoutRelationEqual
-                                                                                   toItem:nil
-                                                                                attribute:NSLayoutAttributeWidth
-                                                                               multiplier:1.0
-                                                                                 constant:flashButtonWH];
-            
-            NSLayoutConstraint* flashButtonHeight = [NSLayoutConstraint constraintWithItem:flashButton
-                                                                                 attribute:NSLayoutAttributeHeight
-                                                                                 relatedBy:NSLayoutRelationEqual
-                                                                                    toItem:nil
-                                                                                 attribute:NSLayoutAttributeHeight
-                                                                                multiplier:1.0
-                                                                                  constant:flashButtonWH];
-            
-            [bottomView addConstraints:@[flashButtonRight2CaptureButtonLeft,flashButtonCenterY2SuperViewCenterY,flashButtonWidth,flashButtonHeight]];
-            
-            
-            
-            
-            NSLayoutConstraint* closeButtonLeft2CaptureButtonRight = [NSLayoutConstraint constraintWithItem:closeButton
-                                                                                                  attribute:NSLayoutAttributeLeft
-                                                                                                  relatedBy:NSLayoutRelationEqual
-                                                                                                     toItem:captureButton
-                                                                                                  attribute:NSLayoutAttributeRight
-                                                                                                 multiplier:1
-                                                                                                   constant:buttonMargin];
-            
-            NSLayoutConstraint* closeButtonCenterY2SuperViewCenterY = [NSLayoutConstraint constraintWithItem:closeButton
-                                                                                                   attribute:NSLayoutAttributeCenterY
-                                                                                                   relatedBy:NSLayoutRelationEqual
-                                                                                                      toItem:bottomView
-                                                                                                   attribute:NSLayoutAttributeCenterY
-                                                                                                  multiplier:1
-                                                                                                    constant:0];
-            
-            NSLayoutConstraint* closeButtonWidth = [NSLayoutConstraint constraintWithItem:closeButton
-                                                                                attribute:NSLayoutAttributeWidth
-                                                                                relatedBy:NSLayoutRelationEqual
-                                                                                   toItem:nil
-                                                                                attribute:NSLayoutAttributeWidth
-                                                                               multiplier:1.0
-                                                                                 constant:closeButtonWH];
-            
-            NSLayoutConstraint* closeButtonHeight = [NSLayoutConstraint constraintWithItem:closeButton
-                                                                                 attribute:NSLayoutAttributeHeight
-                                                                                 relatedBy:NSLayoutRelationEqual
-                                                                                    toItem:nil
-                                                                                 attribute:NSLayoutAttributeHeight
-                                                                                multiplier:1.0
-                                                                                  constant:closeButtonWH];
-            
-            [bottomView addConstraints:@[closeButtonLeft2CaptureButtonRight,closeButtonCenterY2SuperViewCenterY,closeButtonWidth,closeButtonHeight]];
-            
-            
-        }
+                                                                                               constant:buttonMargin];
         
-
+        NSLayoutConstraint* closeButtonCenterY2SuperViewCenterY = [NSLayoutConstraint constraintWithItem:closeButton
+                                                                                               attribute:NSLayoutAttributeCenterY
+                                                                                               relatedBy:NSLayoutRelationEqual
+                                                                                                  toItem:bottomView
+                                                                                               attribute:NSLayoutAttributeCenterY
+                                                                                              multiplier:1
+                                                                                                constant:0];
+        
+        NSLayoutConstraint* closeButtonWidth = [NSLayoutConstraint constraintWithItem:closeButton
+                                                                            attribute:NSLayoutAttributeWidth
+                                                                            relatedBy:NSLayoutRelationEqual
+                                                                               toItem:nil
+                                                                            attribute:NSLayoutAttributeWidth
+                                                                           multiplier:1.0
+                                                                             constant:closeButtonWH];
+        
+        NSLayoutConstraint* closeButtonHeight = [NSLayoutConstraint constraintWithItem:closeButton
+                                                                             attribute:NSLayoutAttributeHeight
+                                                                             relatedBy:NSLayoutRelationEqual
+                                                                                toItem:nil
+                                                                             attribute:NSLayoutAttributeHeight
+                                                                            multiplier:1.0
+                                                                              constant:closeButtonWH];
+        
+        [bottomView addConstraints:@[closeButtonLeft2CaptureButtonRight,closeButtonCenterY2SuperViewCenterY,closeButtonWidth,closeButtonHeight]];
+        
         
         
     }else{
@@ -797,19 +632,11 @@
                                                                                            constant:0];
         [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
         
-        maskImage = [UIImage imageNamed:@"idmask_landscape_front"];
+        idMaskImageView.image = [UIImage imageNamed:@"idmask_landscape_front"];
+        
+        CGFloat buttonMargin = (MIN(WIDTH,HEIGHT) - captureButtonWH) / 4.0;
         
         
-        idMaskImageView.image = maskImage;
-        
-        CGFloat buttonMargin = (HEIGHT - captureButtonWH) / 4.0;
-        
-        if(orientation == UIDeviceOrientationLandscapeRight){
-            // 设置预览图层的方向为横屏
-            self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
-        }else{
-            self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
-        }
         
         NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
                                                                                     attribute:NSLayoutAttributeTop
@@ -1029,10 +856,8 @@
     
     CGFloat originalImageScale = originalImage.scale;
     
-    NSLog(@"originalImage--::size::%f,%f--scale::%f",originalImage.size.width,originalImage.size.height,originalImageScale);
     // 要裁剪的矩形框区域（示例为裁剪左上角100x100的区域）
     CGRect cropRect = [self.idMaskImageView convertRect:self.idMaskImageView.frame toView:self.view];
-    NSLog(@"cropRect--::x:%f,y:%f,w:%f,h:%f",cropRect.origin.x,cropRect.origin.y,cropRect.size.width,cropRect.size.height);
     
     CGFloat orignalW2x = cropRect.size.width * originalImageScale;
     CGFloat orignalH2x = cropRect.size.height * originalImageScale;
@@ -1059,10 +884,8 @@
     CGFloat HRatio = cropH / viewH;
     
     
-    NSLog(@"cropRect2--::x:%f,y:%f,w:%f,h:%f",cropRect2.origin.x,cropRect2.origin.y,cropRect2.size.width,cropRect2.size.height);
     CGRect cropRect3 = CGRectMake(XRatio * imageW, YRatio * imageH, WRatio * imageW, HRatio * imageH);
     
-    NSLog(@"cropRect3--::x:%f,y:%f,w:%f,h:%f",cropRect3.origin.x,cropRect3.origin.y,cropRect3.size.width,cropRect3.size.height);
     
     
     // 根据裁剪区域创建CGImageRef
@@ -1076,7 +899,6 @@
     
     
     UIImageOrientation imageOrientation = croppedImage.imageOrientation;
-    NSLog(@"croppedImage-1---::%d",imageOrientation);
     
     
     if(self.capturedOrientation == UIDeviceOrientationPortraitUpsideDown){
@@ -1089,7 +911,6 @@
     // 获取 PNG 图片占用的字节数
     NSUInteger croppedImageSizeInBytes = croppedImageData.length;
     
-    NSLog(@"croppedImage--1 图片占用 %lu 字节", (unsigned long)croppedImageSizeInBytes);
     
     CGFloat scaleRatio =   TARGET_IMAGE_KB*1024.0 / croppedImageSizeInBytes;
     if(scaleRatio < 1){
@@ -1102,9 +923,12 @@
     // 获取 PNG 图片占用的字节数
     croppedImageSizeInBytes = croppedImageData.length;
     
-    NSLog(@"croppedImage--2 图片占用 %lu 字节", (unsigned long)croppedImageSizeInBytes);
     
-    TDOcrDocResultViewController* resultVC = [[TDOcrDocResultViewController alloc]initWithContentImage:croppedImage];
+    TDOcrDocResultViewController* resultVC = [[TDOcrDocResultViewController alloc]initWithContentImage:croppedImage Completion:^{
+        UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
+        [self refreshUI:orientation];
+        
+    }];
     // [self.navigationController pushViewController:resultVC animated:YES];
     resultVC.modalPresentationStyle = UIModalPresentationOverFullScreen;
     [self presentViewController:resultVC animated:YES completion:nil];
@@ -1142,7 +966,6 @@
     CGFloat height = image.size.height;
     CGFloat scale = image.scale;
     CGSize screenSize = [[UIScreen mainScreen] bounds].size;
-    NSLog(@"width--::%f,height--::%f,screenSize--::%f,%f",width,height,screenSize.width,screenSize.height);
     if(width < height){
         UIGraphicsBeginImageContextWithOptions(CGSizeMake(width, height), YES, scale);
         [image drawInRect:CGRectMake(0, 0, width, height)];
@@ -1154,7 +977,6 @@
     
     UIImageOrientation imageOrientation = pngImage.imageOrientation;
     
-    NSLog(@"imageOrientation-1---::%d",imageOrientation);
     
     UIGraphicsEndImageContext();
     

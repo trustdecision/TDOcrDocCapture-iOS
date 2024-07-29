@@ -12,6 +12,8 @@
 
 @property(nonatomic,strong)UIImage* contentImage;
 
+@property (nonatomic, copy) CompletionBlock completionBlock;
+
 @end
 
 @implementation TDOcrDocResultViewController
@@ -28,10 +30,11 @@
     return UIInterfaceOrientationPortrait;
 }
 
--(instancetype)initWithContentImage:(UIImage*)contentImage
+-(instancetype)initWithContentImage:(UIImage*)contentImage Completion:(nonnull CompletionBlock)completionBlock
 {
     if(self = [super init]){
         self.contentImage = contentImage;
+        self.completionBlock = completionBlock;
     }
     return self;
 }
@@ -206,6 +209,7 @@
 
 
 -(void)retryButtonClick:(UIButton*)button{
+    self.completionBlock();
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
