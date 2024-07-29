@@ -25,13 +25,9 @@
 #import <UIKit/UIKit.h>
 #import "TDOcrDocResultViewController.h"
 @interface UIImage (Rotation)
-
-- (UIImage *)rotateToLandscape:(CGFloat)degrees;
-
 /**
  Compress a UIImage to the specified ratio
  
- @param image The image to compress
  @param ratio The compress ratio to compress to
  
  */
@@ -158,11 +154,10 @@
 
 -(void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];
-
+    
     UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
     [self refreshUI:orientation];
 }
-
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -172,10 +167,6 @@
                                              selector:@selector(deviceOrientationDidChange:)
                                                  name:UIDeviceOrientationDidChangeNotification
                                                object:nil];
-    
-    
-    
-    // Do any additional setup after loading the view.
 }
 
 -(void)setupCamera{
@@ -227,38 +218,18 @@
     
 }
 
-
-// 方法2：
-- (void)setInterfaceOrientation:(UIDeviceOrientation)orientation {
-    if ([[UIDevice currentDevice] respondsToSelector:@selector(setOrientation:)]) {
-        SEL selector = NSSelectorFromString(@"setOrientation:");
-        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[UIDevice
-                                                                                instanceMethodSignatureForSelector:selector]];
-        [invocation setSelector:selector];
-        [invocation setTarget:[UIDevice currentDevice]];
-        int val = orientation;
-        [invocation setArgument:&val atIndex:2];
-        [invocation invoke];
-    }
-}
-
-
 - (void)deviceOrientationDidChange:(NSNotification *)notification {
     UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
     orientation = [[UIDevice currentDevice] orientation];
-    
-    
     [self refreshUI:orientation];
-    // 在这里处理方向变化
 }
-
 
 -(void)refreshUI:(UIDeviceOrientation)orientation
 {
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
     
-
+    
     BOOL isPortrait = width < height;
     
     if(orientation == UIDeviceOrientationLandscapeLeft || orientation == UIDeviceOrientationLandscapeRight){
@@ -284,13 +255,11 @@
             isPortrait = NO;
         }
         self.previewLayer.frame =  self.view.bounds;
-
+        
     }
     
     
     [self refreshWithIsPortrait:isPortrait];
-    
-    
     
     if(orientation == UIDeviceOrientationLandscapeRight){
         // 设置预览图层的方向为横屏
@@ -303,7 +272,6 @@
         self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
     }
     else if(orientation == UIDeviceOrientationPortraitUpsideDown){
-      //  self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortraitUpsideDown;
         if(width < height){
             self.idMaskImageView.image = [UIImage imageWithCGImage:self.idMaskImageView.image.CGImage
                                                              scale:self.idMaskImageView.image.scale
@@ -317,9 +285,6 @@
 }
 
 -(void)refreshWithIsPortrait:(BOOL)isPortrait{
-    
-    
-    
     [self.view.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         [obj removeFromSuperview];
     }];
@@ -355,15 +320,10 @@
                                                                                               multiplier:1
                                                                                                 constant:0];
     
-    
-    
-    
-    
     UIView* bottomView = [[UIView alloc]init];
     [self.view addSubview:bottomView];
     bottomView.backgroundColor = [UIColor blackColor];
     bottomView.translatesAutoresizingMaskIntoConstraints = NO;
-    
     
     // 处理bottomView
     
@@ -415,9 +375,6 @@
     [bottomView addConstraints:@[captureButtonCenterX2SuperViewCenterX,captureButtonCenterY2SuperViewCenterY,captureButtonWidth,captureButtonHeight]];
     
     
-    
-    
-    
     ////  灯光按钮
     UIButton* flashButton = [[UIButton alloc]init];
     [flashButton setImage:[UIImage imageNamed:@"flash"] forState:UIControlStateNormal];
@@ -438,9 +395,6 @@
     [bottomView addSubview:closeButton];
     closeButton.translatesAutoresizingMaskIntoConstraints = NO;
     CGFloat closeButtonWH = 40;
-    
-    
-    
     
     // 动态旋转的时候处理
     if(isPortrait){
@@ -635,8 +589,6 @@
         idMaskImageView.image = [UIImage imageNamed:@"idmask_landscape_front"];
         
         CGFloat buttonMargin = (MIN(WIDTH,HEIGHT) - captureButtonWH) / 4.0;
-        
-        
         
         NSLayoutConstraint* maskViewTop2SuperViewTop = [NSLayoutConstraint constraintWithItem:maskView
                                                                                     attribute:NSLayoutAttributeTop
@@ -867,10 +819,6 @@
     CGFloat cropX = cropRect.origin.x / (2.0 / originalImageScale) - (cropW - orignalW2x)/2.0;
     CGFloat cropY = cropRect.origin.y / (2.0 / originalImageScale) - (cropH - orignalH2x)/2.0;
     
-    
-    CGRect cropRect2 = CGRectMake(cropX, cropY, cropW, cropH);
-    
-    
     CGFloat viewW = self.view.bounds.size.width;
     CGFloat viewH = self.view.bounds.size.height;
     
@@ -882,12 +830,7 @@
     CGFloat YRatio = cropY / viewH;
     CGFloat WRatio = cropW / viewW;
     CGFloat HRatio = cropH / viewH;
-    
-    
     CGRect cropRect3 = CGRectMake(XRatio * imageW, YRatio * imageH, WRatio * imageW, HRatio * imageH);
-    
-    
-    
     // 根据裁剪区域创建CGImageRef
     CGImageRef imageRef = CGImageCreateWithImageInRect(originalImage.CGImage, cropRect3);
     
@@ -896,10 +839,6 @@
     
     // 释放CGImageRef
     CGImageRelease(imageRef);
-    
-    
-    UIImageOrientation imageOrientation = croppedImage.imageOrientation;
-    
     
     if(self.capturedOrientation == UIDeviceOrientationPortraitUpsideDown){
         croppedImage = [croppedImage imageRotatedByDegrees:180];
@@ -965,7 +904,6 @@
     CGFloat width = image.size.width;
     CGFloat height = image.size.height;
     CGFloat scale = image.scale;
-    CGSize screenSize = [[UIScreen mainScreen] bounds].size;
     if(width < height){
         UIGraphicsBeginImageContextWithOptions(CGSizeMake(width, height), YES, scale);
         [image drawInRect:CGRectMake(0, 0, width, height)];
@@ -974,19 +912,13 @@
         [image drawInRect:CGRectMake(0, 0, height, width)];
     }
     UIImage *pngImage = UIGraphicsGetImageFromCurrentImageContext();
-    
-    UIImageOrientation imageOrientation = pngImage.imageOrientation;
-    
-    
     UIGraphicsEndImageContext();
     
-    // if(width > height){
     if(self.capturedOrientation == UIDeviceOrientationLandscapeLeft){
         pngImage = [pngImage imageRotatedByDegrees:-90];
     }else if(self.capturedOrientation == UIDeviceOrientationLandscapeRight){
         pngImage = [pngImage imageRotatedByDegrees:90];
     }
-    // }
     
     [self cropImageAndSaveToPhotosAlbum:pngImage];
     

@@ -101,7 +101,6 @@
     
 
     CGFloat buttonMargin = 30;
-    CGFloat buttonW = (self.view.bounds.size.width - buttonMargin*3) / 2.0;
     CGFloat buttonH = 44;
     
     UIButton * retryButton = [[UIButton alloc]init];
@@ -203,8 +202,6 @@
                                                                           constant:buttonH];
     
     [self.view addConstraints:@[continueButtonLeft,continueButtonBottom,continueButtonRight,continueButtonWidth,continueButtonHeight]];
-    
-    
 }
 
 
