@@ -417,9 +417,7 @@
         [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
         
         idMaskImageView.image = [UIImage imageNamed:@"idmask_portrait_front"];
-        
-        self.previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
-        
+                
         
         CGFloat buttonMargin = (MIN(WIDTH,HEIGHT) - captureButtonWH) / 4.0;
         
@@ -863,10 +861,9 @@
     croppedImageSizeInBytes = croppedImageData.length;
     
     
-    TDOcrDocResultViewController* resultVC = [[TDOcrDocResultViewController alloc]initWithContentImage:croppedImage Completion:^{
+    TDOcrDocResultViewController* resultVC = [[TDOcrDocResultViewController alloc]initWithOrientation:self.capturedOrientation ContentImage:croppedImage Completion:^{
         UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
         [self refreshUI:orientation];
-        
     }];
     // [self.navigationController pushViewController:resultVC animated:YES];
     resultVC.modalPresentationStyle = UIModalPresentationOverFullScreen;

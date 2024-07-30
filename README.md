@@ -2,17 +2,17 @@
 
 TDOcrDocCapture 是为客户提供一个证件拍摄的UI库，以源码形式提供，同时支持iOS 和 Android，本仓库为iOS 仓库
 
-**竖屏**
+### 竖屏
 
-![](./pic/portrait.PNG)
+| 拍照页面 | 裁剪页面 |
+| -------- | -------- |
+|  <img src="./pic/portrait_1.PNG" style="zoom:33%;" /> |   <img src="./pic/portrait_2.PNG" style="zoom:33%;" />|
 
-**横屏**
+### 横屏
 
-![](./pic/landscape.PNG)
-
-**结果页**
-
-![](./pic/result.PNG)
+| 拍照页面 | 裁剪页面 |
+| -------- | -------- |
+|  <img src="./pic/landscape_1.PNG" style="zoom:33%;" />  |   <img src="./pic/landscape_2.PNG" style="zoom:33%;" />|
 
 
 # 集成

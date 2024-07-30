@@ -13,7 +13,7 @@ typedef void (^CompletionBlock)(void);
 
 @interface TDOcrDocResultViewController : UIViewController
 
--(instancetype)initWithContentImage:(UIImage*)contentImage Completion:(CompletionBlock)completionBlock;
+-(instancetype)initWithOrientation:(UIDeviceOrientation)orientation ContentImage:(UIImage*)contentImage Completion:(nonnull CompletionBlock)completionBlock;
 
 @end
 
