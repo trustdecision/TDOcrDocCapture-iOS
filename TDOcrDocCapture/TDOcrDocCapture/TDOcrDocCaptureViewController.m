@@ -417,7 +417,7 @@
         [maskView addConstraints:@[idMaskImageViewWidth2SuperViewWidth,idMaskImageViewCenterX2SuperViewCenterX,idMaskImageViewCenterY2SuperViewCenterY,idMaskImageViewWithHeightRatio]];
         
         idMaskImageView.image = [UIImage imageNamed:@"idmask_portrait_front"];
-                
+        
         
         CGFloat buttonMargin = (MIN(WIDTH,HEIGHT) - captureButtonWH) / 4.0;
         
@@ -747,7 +747,7 @@
 }
 
 -(void)closeButtonClick:(UIButton*)button{
-    
+    exit(0);
 }
 
 /*!
