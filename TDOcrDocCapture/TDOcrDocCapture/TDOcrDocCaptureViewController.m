@@ -24,6 +24,11 @@
 
 #import <UIKit/UIKit.h>
 #import "TDOcrDocResultViewController.h"
+
+#include "rwpng.h"  /* typedefs, common macros, public prototypes */
+#include "libimagequant.h" /* if it fails here, run: git submodule update; ./configure; or add -Ilib to compiler flags */
+#include "pngquant_opts.h"
+
 @interface UIImage (Rotation)
 /**
  Compress a UIImage to the specified ratio
@@ -800,6 +805,42 @@
     
     return resultImage;
 }
+pngquant_error pngquant_main_internal(struct pngquant_options *options, liq_attr *liq);
+
+
+#define SAVE_PNG_NAME @"capture.png"
+
+#define SAVE_COMPRESSED_PNG_NAME @"capture_compressed.png"
+
+
+-(int)compressPng:(NSString*)pngPath outPng:(NSString*)outPngPath quality:(NSUInteger)quality
+{
+    const char* pngPath_c = pngPath.UTF8String;
+    
+    const char* outPngPath_c = outPngPath.UTF8String;
+    
+    NSString* qualityString = [NSString stringWithFormat:@"%d-%d",quality,quality];
+    
+    const char* qualityString_c = qualityString.UTF8String;
+    struct pngquant_options options = {
+        .floyd = 0, // floyd-steinberg dithering
+        .strip = true,
+        .quality = qualityString_c,
+        .posterize = 1,
+        .fast_compression = true,
+        .files = &pngPath_c,
+        .num_files = 1,
+        .output_file_path = outPngPath_c
+    };
+
+    liq_attr *liq = liq_attr_create();
+ 
+    pngquant_error retval = pngquant_main_internal(&options, liq);
+    liq_attr_destroy(liq);
+    return retval;
+}
+
+//#define COMPRESS_PNG_USE_OC
 
 // 从PNG图片中裁剪指定矩形框区域像素并生成PNG
 - (void)cropImageAndSaveToPhotosAlbum:(UIImage*)originalImage {
@@ -848,18 +889,41 @@
     // 获取 PNG 图片占用的字节数
     NSUInteger croppedImageSizeInBytes = croppedImageData.length;
     
-    
     CGFloat scaleRatio =   TARGET_IMAGE_KB*1024.0 / croppedImageSizeInBytes;
+
+    
+#ifdef COMPRESS_PNG_USE_OC
     if(scaleRatio < 1){
         croppedImage = [croppedImage compressWithCompressRatio:scaleRatio];
     }
+#else
     
     // 将 UIImage 转换为 PNG 格式的 NSData
     croppedImageData = UIImagePNGRepresentation(croppedImage);
     
-    // 获取 PNG 图片占用的字节数
-    croppedImageSizeInBytes = croppedImageData.length;
+    NSArray *documentPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [documentPaths firstObject];
+    NSLog(@"Documents目录路径: %@", documentsDirectory);
     
+    NSString* capturePngPath = [documentsDirectory stringByAppendingPathComponent:SAVE_PNG_NAME];
+    
+    NSString* compressedCapturePngPath = [documentsDirectory stringByAppendingPathComponent:SAVE_COMPRESSED_PNG_NAME];
+
+    NSError* error;
+    
+    [[NSFileManager defaultManager] removeItemAtPath:compressedCapturePngPath error:&error];
+    
+    BOOL isS = [croppedImageData writeToFile:capturePngPath atomically:YES];
+
+    [self compressPng:capturePngPath outPng:compressedCapturePngPath quality:scaleRatio*100];
+    
+    NSData* compressedImageData = [NSData dataWithContentsOfFile:compressedCapturePngPath];
+    croppedImage = [UIImage imageWithData:compressedImageData];
+    
+    [[NSFileManager defaultManager] removeItemAtPath:capturePngPath error:&error];
+    
+    [[NSFileManager defaultManager] removeItemAtPath:compressedCapturePngPath error:&error];
+#endif
     
     TDOcrDocResultViewController* resultVC = [[TDOcrDocResultViewController alloc]initWithOrientation:self.capturedOrientation ContentImage:croppedImage Completion:^{
         UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
